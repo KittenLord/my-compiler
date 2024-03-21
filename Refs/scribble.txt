@@ -1,0 +1,8 @@
+fn test(i32 a, i32 b) -> i32 {
+    a + b
+}
+
+fn main() {
+    let a i32 = 5;
+    let b i32[] = [1, 2, 3];
+}

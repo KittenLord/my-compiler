@@ -1,0 +1,6 @@
+let a = 5;
+fn test(i32 a, i32 b) {
+    return a + b;
+    ""
+    "\"  \\ \""
+}

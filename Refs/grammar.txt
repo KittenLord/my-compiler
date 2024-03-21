@@ -1,0 +1,30 @@
+Goal ->
+    | Fn Goal
+    | Struct Goal
+
+Fn ->
+    | <fn> <id> <(> FnParams <)> FnRet Block
+
+FnParams ->
+    | <id> <id>
+    | <id> <id> <comma> FnParams
+    | e
+
+FnRet ->
+    | <arrow> <id>
+    | e
+
+// What can be inside a function
+// let a i32 = 5;
+// let a i32 = func(a, b);
+// if something {} else {}
+// for i from 0 to 10 {}
+// while a {}
+// return a;
+// a (implicit return at the end of the block)
+Block ->
+    | <{> InnerBlock <}>
+
+InnerBlock ->
+    | e
+
