@@ -193,8 +193,9 @@ ParseBlock:
         var paramsToken = Tokenizer.Consume(); // (
         Token token;
 
-        while((token = Tokenizer.Consume()).IsNot(TokenType.RParen))
+        while((token = Tokenizer.Peek()).IsNot(TokenType.RParen))
         {
+            token = Tokenizer.Consume();
             if(token.Is(TokenType.Id)) // type
             {
                 var param = new FnDefParamNode();
@@ -246,16 +247,19 @@ ParseBlock:
         return args;
     }
 
-    private FnBlock ParseBlock(List<ParseError> errors)
+    private BlockNode ParseBlock(List<ParseError> errors)
     {
-        var block = new FnBlock();
+        var block = new BlockNode();
         var begin = Tokenizer.Consume(); // {
 
         Token token;
-        while((token = Tokenizer.Consume()).IsNot(TokenType.RCurly))
+        while((token = Tokenizer.Peek()).IsNot(TokenType.RCurly, TokenType.EOF))
         {
-
+            token = Tokenizer.Consume();
         }
+
+        if(token.IsNot(TokenType.RCurly)) { errors.Add(ParseError.UnclosedDelimiter(begin)); }
+        else Tokenizer.Consume();
 
         return block;
     }

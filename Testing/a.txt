@@ -1,1 +1,4 @@
-fn a ( (int b) -> {}
+// aboba
+fn a(int d) -> a {  } // asdasd
+fn b()
+// asdasbdib

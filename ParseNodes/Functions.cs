@@ -8,7 +8,7 @@ public struct FnDefNode
 {
     public Token? Id;
     public Token? ReturnType;
-    public FnBlock Block;
+    public BlockNode? Block;
     public List<FnDefParamNode> Params;
 
     public FnDefNode()
@@ -32,9 +32,4 @@ public struct FnDefParamNode
     {
         return $"({Type?.Value ?? "N/A"} {Id?.Value ?? "N/A"})";
     }
-}
-
-public struct FnBlock
-{
-
 }

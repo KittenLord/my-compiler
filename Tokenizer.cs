@@ -57,6 +57,16 @@ public class Tokenizer
         if (Position >= Buffer.Length - 1) return CreateToken(TokenType.EOF);
 
 
+        if(Position + 1 < Buffer.Length && Buffer[Position] == '/' && Buffer[Position + 1] == '/')
+        {
+            while(Position < Buffer.Length && !char.IsWhiteSpace(Buffer[Position]))
+            {
+                Position++;
+            }
+            return this.Peek();
+        }
+
+
         if (char.IsLetter(Buffer[Position])) return ReadWordToken();
         if (char.IsDigit(Buffer[Position])) return ReadNumberToken();
         if ("+-*/%=!<>".Contains(Buffer[Position])) return ReadOperatorToken();
