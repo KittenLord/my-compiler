@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace MyCompiler;
 
 public enum TokenType
@@ -30,6 +32,8 @@ public enum TokenType
     DivAsgn, // /=
     ModAsgn, // %=
     ModNegAsgn, // %%=
+
+    RetArrow, // ->
 
     Not, // !
     Assign, // =
@@ -70,6 +74,18 @@ public struct Token
         Value = value;
         Line = line;
         Char = charn;
+    }
+
+    public bool Is(params TokenType[] types)
+    {
+        var type = Type;
+        return types.Any(t => t == type);
+    }
+
+    public bool IsNot(params TokenType[] types)
+    {
+        var type = Type;
+        return types.All(t => t != type);
     }
 
     public override string ToString()

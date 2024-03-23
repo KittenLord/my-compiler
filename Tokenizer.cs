@@ -143,6 +143,8 @@ public class Tokenizer
         if (buffer == "<=") return CreateToken(TokenType.LsEq, buffer);
         if (buffer == ">=") return CreateToken(TokenType.GrEq, buffer);
 
+        if (buffer == "->") return CreateToken(TokenType.RetArrow, buffer);
+
         buffer = buffer.Substring(0, 1);
 
         if (buffer == "+") return CreateToken(TokenType.Plus, buffer);

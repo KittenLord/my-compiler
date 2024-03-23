@@ -27,4 +27,13 @@ Block ->
 
 InnerBlock ->
     | e
+    | BlockLine <;> InnerBlock
+    | BlockLine
 
+BlockLine ->
+    | Declaration
+
+// I know this is not necessarily correct, but this is just for comprehension
+Declaration ->
+    | <let> <id> <id> <=> Expression
+    | <let> <id> <=> Expression

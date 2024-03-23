@@ -1,0 +1,22 @@
+// Valid code
+fn test(i32 a, i32 b) -> i32 {} 
+
+// Valid code
+fn test(i32 a, i32 b) {}
+
+// Valid code
+fn test() {}
+
+// Missing identifier
+fn (i32 a) {}
+
+// Unexpected token
+fn a a(i32 a) {}
+
+// The first function ends at }, second function gets parsed correctly
+fn } fn a(i32 a) {}
+
+// Read until identifier/(/)/{/}
+fn fn a(i32 a) {}
+
+The hard thing is, it needs to find some sort of a recovery token and continue parsing from there on

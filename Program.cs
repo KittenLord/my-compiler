@@ -10,8 +10,19 @@ public class Program
         var path = "Testing/a.txt";
         var code = File.ReadAllText(path);
 
-        var tokenizer = new Tokenizer(code);
+        RunTokenizer(code);
 
+        var tokenizer = new Tokenizer(code);
+        var parser = new Parser(tokenizer);
+        var result = parser.Parse();
+
+        result.Errors.ForEach(error => Console.WriteLine(error + "\n"));
+        Console.WriteLine(result.Goal);
+    }
+
+    public static void RunTokenizer(string code)
+    {
+        var tokenizer = new Tokenizer(code);
         Token token;
         do
         {
