@@ -11,44 +11,28 @@ public struct ParseError
     public int Char;
 
     public override string ToString()
-    {
-        return $"{Error}\n\tat [ {Line} : {Char} ]";
-    }
+        => $"{Error}\n\tat [ {Line} : {Char} ]";
 
     public static ParseError InvalidFunctionDefinition(Token token)
-    {
-        return new ParseError($"Invalid function definition. Functions are defined like this:\n\tfn name(type1 arg1, type2 arg2) -> retType {{ ... }}", token.Line, token.Char);
-    }
+        => new ParseError($"Invalid function definition. Functions are defined like this:\n\tfn name(type1 arg1, type2 arg2) -> retType {{ ... }}", token.Line, token.Char);
 
     public static ParseError NoFunctionReturnType(Token token)
-    {
-        return new ParseError($"Function definition has -> operator, but no return type specified", token.Line, token.Char);
-    }
+        => new ParseError($"Function definition has -> operator, but no return type specified", token.Line, token.Char);
 
     public static ParseError InvalidArgumentDefinition(Token token)
-    {
-        return new ParseError($"Invalid argument definition", token.Line, token.Char);
-    }
+        => new ParseError($"Invalid argument definition", token.Line, token.Char);
 
     public static ParseError UnexpectedToken(Token token, params TokenType[] expected)
-    {
-        return new ParseError($"Unexpected token {{{token.Type}}} (expected: [{string.Join(", ", expected)}])", token.Line, token.Char);
-    }
+        => new ParseError($"Unexpected token {{{token.Type}}} (expected: [{string.Join(", ", expected)}])", token.Line, token.Char);
 
     public static ParseError MissingFunctionName(Token token)
-    {
-        return new ParseError($"Missing function name", token.Line, token.Char);
-    }
+        => new ParseError($"Missing function name", token.Line, token.Char);
 
     public static ParseError UnclosedDelimiter(Token token)
-    {
-        return new ParseError($"An unclosed delimiter ({token}) was found", token.Line, token.Char);
-    }
+        => new ParseError($"An unclosed delimiter ({token}) was found", token.Line, token.Char);
 
     public static ParseError NoArgumentName(Token token)
-    {
-        return new ParseError($"An argument name was expected", token.Line, token.Char);
-    }
+        => new ParseError($"An argument name was expected", token.Line, token.Char);
 
     public ParseError(string error, int line, int charn)
     {
@@ -183,6 +167,7 @@ ParseBlock:
         errors.Add(ParseError.UnexpectedToken(type, TokenType.Id));
         while((type = Tokenizer.Peek()).IsNot(TokenType.LCurly, TokenType.EOF)) { Tokenizer.Consume(); }
         if(type.Is(TokenType.LCurly)) { errors.Add(ParseError.NoFunctionReturnType(pivot)); }
+
         return null;
     }
 
@@ -243,6 +228,8 @@ ParseBlock:
                 continue;
             }
         }
+
+        Tokenizer.Consume(); // )
 
         return args;
     }

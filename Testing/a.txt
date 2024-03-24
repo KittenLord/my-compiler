@@ -1,4 +1,3 @@
-// aboba
-fn a(int d) -> a {  } // asdasd
-fn b()
-// asdasbdib
+fn main(string args) -> int { 
+
+}
