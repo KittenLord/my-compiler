@@ -432,7 +432,7 @@ ParseBlock:
     {
         if(!Tokenizer.Peek().IsBinaryOperator()) return lhs;
         
-        var opToken = Tokenizer.Consume();
+        var opToken = Tokenizer.Peek();
         var precedence = opToken.GetBinaryOperatorPrecedence();
         if(precedence <= minPrecedence)
         {
@@ -440,6 +440,7 @@ ParseBlock:
         }
         else
         {
+            Tokenizer.Consume();
             OpExprNode op = new();
             op.Operator = opToken;
             op.Lhs = lhs;
