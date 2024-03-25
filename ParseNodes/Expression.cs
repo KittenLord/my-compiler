@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace MyCompiler.Parsing;
 
-public interface IExpression
+public interface IExpression : IBlockLineNode
 {
 
 }
@@ -48,7 +48,7 @@ public struct ChainLitExprNode : IExpression
 
     public override string ToString()
     {
-        return "Chain\n" + string.Join("", Chain.Select(s => "\n." + s.ToString())).Indent();
+        return "Chain" + string.Join("", Chain.Select(s => "\n." + s.ToString())).Indent();
     }
 }
 

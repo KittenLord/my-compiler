@@ -10,8 +10,20 @@ public static class Extensions
     public static bool IsBinaryOperator(this Token token)
     {
         return token.Is(TokenType.Plus, TokenType.Minus, TokenType.Mul, TokenType.Div,
-                        TokenType.Eq, TokenType.Neq, TokenType.Mod,
+                        TokenType.Eq, TokenType.Neq, TokenType.Mod, TokenType.ModNeg,
                         TokenType.Ls, TokenType.Gr, TokenType.GrEq, TokenType.LsEq);
+    }
+
+    public static bool IsMutOperator(this Token token)
+    {
+        return token.Is(TokenType.Assign, 
+                        TokenType.PlusAsgn, TokenType.MinusAsgn, TokenType.MulAsgn, TokenType.DivAsgn,
+                        TokenType.ModAsgn, TokenType.ModNegAsgn);
+    }
+
+    public static bool IsValue(this Token token)
+    {
+        return token.Is(TokenType.Id, TokenType.Number, TokenType.String, TokenType.True, TokenType.False);
     }
 
     public static int GetBinaryOperatorPrecedence(this Token token)
@@ -24,7 +36,7 @@ public static class Extensions
 
             TokenType.Plus or TokenType.Minus => 1,
 
-            TokenType.Mod => 2,
+            TokenType.Mod or TokenType.ModNeg => 2,
 
             TokenType.Mul or TokenType.Div => 3,
 

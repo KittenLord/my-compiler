@@ -1,3 +1,11 @@
-fn main(string* args) -> int { 
-    let a = 3 + 2 * b(5, 3[3]);
+fn main(string* args) -> int {
+    if aboba {
+        print("a");
+    }
+    else if penis {
+        sex
+    }
+    else {
+        cocaine
+    }
 }

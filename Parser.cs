@@ -12,12 +12,18 @@ public struct ParseError
 
     public override string ToString()
         => $"{Error}\n\tat [ {Line} : {Char} ]";
+    
+    public static ParseError SemicolonMissing(Token token)
+        => new ParseError($"Missing a semicolon", token.Line, token.Char);
 
     public static ParseError NoFunctionReturnType(Token token)
         => new ParseError($"Function definition has -> operator, but no return type specified", token.Line, token.Char);
 
     public static ParseError InvalidFunctionDefinition(Token token)
         => new ParseError($"Invalid function definition. Functions are defined like this:\n\tfn name(type1 arg1, type2 arg2) -> retType {{ ... }}", token.Line, token.Char);
+
+    public static ParseError InvalidVarDeclaration(Token token)
+        => new ParseError($"Invalid variable declaration. Declare a variable like this:\n\tlet [type] name = value;", token.Line, token.Char);
 
     public static ParseError InvalidArgumentDefinition(Token token)
         => new ParseError($"Invalid argument definition", token.Line, token.Char);
@@ -271,6 +277,10 @@ ParseBlock:
         while((token = Tokenizer.Peek()).IsNot(TokenType.RCurly, TokenType.EOF))
         {
             if(token.Is(TokenType.Let)) block.Lines.Add(ParseDeclaration(errors));
+            else if(token.IsValue()) block.Lines.Add(ParseExpression(errors));
+            else if(token.Is(TokenType.Mut)) block.Lines.Add(ParseMutation(errors));
+            else if(token.Is(TokenType.If)) { block.Lines.Add(ParseIf(errors)); continue; }
+            else if(token.Is(TokenType.Else)) { block.Lines.Add(ParseElse(errors)); continue; }
             else 
             {
                 errors.Add(ParseError.UnexpectedToken(token, TokenType.Let));
@@ -278,15 +288,77 @@ ParseBlock:
                 continue;
             }
 
-            if(Tokenizer.Peek().Is(TokenType.Semi)) Tokenizer.Consume();
+            if(Tokenizer.Peek().Is(TokenType.Semi)) { Tokenizer.Consume(); }
             else if(Tokenizer.Peek().Is(TokenType.RCurly) && block.Lines.Count > 0) 
-                block.Lines[block.Lines.Count - 1].Return = true;
+            {
+                block.ReturnLast = true;
+            }
+            else
+            {
+                errors.Add(ParseError.SemicolonMissing(Tokenizer.Peek()));
+            }
         }
 
         if(token.IsNot(TokenType.RCurly)) { errors.Add(ParseError.UnclosedDelimiter(begin)); }
         else Tokenizer.Consume();
 
         return block;
+    }
+
+    private IfNode ParseIf(List<ParseError> errors)
+    {
+        IfNode ifNode = new();
+        Tokenizer.Consume(); // if
+        ifNode.Condition = ParseExpression(errors);
+        ifNode.Block = ParseBlock(errors);
+        return ifNode;
+    }
+
+    private IBlockLineNode ParseElse(List<ParseError> errors)
+    {
+        Tokenizer.Consume(); // else
+        if(Tokenizer.Peek().Is(TokenType.If))
+        {
+            ElseIfNode elseIfNode = new();
+            var temp = ParseIf(errors);
+            elseIfNode.Condition = temp.Condition;
+            elseIfNode.Block = temp.Block;
+            return elseIfNode;
+        }
+
+        ElseNode elseNode = new();
+        elseNode.Block = ParseBlock(errors);
+        return elseNode;
+    }
+
+    private MutationNode ParseMutation(List<ParseError> errors)
+    {
+        MutationNode mutation = new();
+        var mutToken = Tokenizer.Consume(); // mut
+
+        var token = Tokenizer.Peek(); // type/id
+        if(token.IsNot(TokenType.Id))
+        {
+            while((token = Tokenizer.Peek()).IsNot(TokenType.Semi, TokenType.RCurly, TokenType.Id)) 
+                Tokenizer.Consume();
+            if(token.IsNot(TokenType.Id)) return mutation;
+        }
+
+        mutation.Id = token;
+        Tokenizer.Consume();
+
+        var op = Tokenizer.Peek();
+        if(!op.IsMutOperator())
+        {
+            while((token = Tokenizer.Peek()).IsNot(TokenType.Semi, TokenType.RCurly)) 
+                Tokenizer.Consume();
+            return mutation;
+        }
+
+        Tokenizer.Consume();
+
+        mutation.Expr = ParseExpression(errors);
+        return mutation;
     }
 
     private DeclarationNode ParseDeclaration(List<ParseError> errors)
@@ -297,6 +369,8 @@ ParseBlock:
         var token = Tokenizer.Peek(); // type/id
         if(token.IsNot(TokenType.Id))
         {
+            errors.Add(ParseError.UnexpectedToken(token, TokenType.Id));
+            errors.Add(ParseError.InvalidVarDeclaration(letToken));
             while((token = Tokenizer.Peek()).IsNot(TokenType.Semi, TokenType.RCurly, TokenType.Id)) 
                 Tokenizer.Consume();
             if(token.IsNot(TokenType.Id)) return declaration;
@@ -307,6 +381,8 @@ ParseBlock:
         token = Tokenizer.Peek(); // id/=
         if(token.IsNot(TokenType.Id, TokenType.Assign))
         {
+            errors.Add(ParseError.UnexpectedToken(token, TokenType.Id, TokenType.Assign));
+            errors.Add(ParseError.InvalidVarDeclaration(letToken));
             while((token = Tokenizer.Peek()).IsNot(TokenType.Semi, TokenType.RCurly, TokenType.Id, TokenType.Assign)) 
                 Tokenizer.Consume();
             if(token.IsNot(TokenType.Id, TokenType.Assign)) return declaration;
@@ -321,12 +397,13 @@ ParseBlock:
         {
             declaration.Id = declaration.Type.Value.Base;
             declaration.Type = null;
-            System.Console.WriteLine($"test");
         }
 
         token = Tokenizer.Peek();
         if(token.IsNot(TokenType.Assign))
         {
+            errors.Add(ParseError.UnexpectedToken(token, TokenType.Assign));
+            errors.Add(ParseError.InvalidVarDeclaration(letToken));
             while((token = Tokenizer.Peek()).IsNot(TokenType.Semi, TokenType.RCurly, TokenType.Assign)) 
                 Tokenizer.Consume();
             if(token.IsNot(TokenType.Assign)) return declaration;
@@ -442,6 +519,10 @@ ParseBlock:
             if(next.IsNot(TokenType.RParen))
             {
                 errors.Add(ParseError.UnexpectedToken(next, TokenType.RParen));
+            }
+            else
+            {
+                Tokenizer.Consume();
             }
 
             return func;

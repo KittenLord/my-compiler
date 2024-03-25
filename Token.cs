@@ -7,16 +7,21 @@ public enum TokenType
     EOF, // End of the token stream 
     Invalid, // an invalid token
     Let, // let
+    Mut, // mut
     Fn, // fn
     If, // if
+    Else, // else
+    From, // from
+    To, // to
     For, // for
+    Do, // do while
     While, // while
     True, // true
     False, // false
     Return, // return
     Id, // identifier, i.e. variable/function name, type
 
-    Number, // 12312, 1_000_000, 0x0000
+    Number, // 12312, 0x0000
 
     Plus, // +
     Minus, // - 

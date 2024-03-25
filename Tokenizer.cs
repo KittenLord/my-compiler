@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace MyCompiler;
 
@@ -102,7 +103,12 @@ public class Tokenizer
         }
 
         if (buffer == "let") return CreateToken(TokenType.Let, buffer);
+        if (buffer == "mut") return CreateToken(TokenType.Mut, buffer);
         if (buffer == "if") return CreateToken(TokenType.If, buffer);
+        if (buffer == "else") return CreateToken(TokenType.Else, buffer);
+        if (buffer == "from") return CreateToken(TokenType.From, buffer);
+        if (buffer == "to") return CreateToken(TokenType.To, buffer);
+        if (buffer == "do") return CreateToken(TokenType.Do, buffer);
         if (buffer == "fn") return CreateToken(TokenType.Fn, buffer);
         if (buffer == "for") return CreateToken(TokenType.For, buffer);
         if (buffer == "while") return CreateToken(TokenType.While, buffer);
@@ -114,17 +120,58 @@ public class Tokenizer
 
     private Token ReadNumberToken()
     {
-        string buffer = "";
-        int pos;
-        for (pos = Position;
-            pos < Buffer.Length &&
-                (char.IsDigit(Buffer[pos]) || "xbo._df".Contains(Buffer[pos]));
-            pos++)
+        var buffer = "";
+        int pos = Position;
+
+        buffer += Buffer[pos]; // initial digit;
+        pos++;
+
+        if(pos < Buffer.Length && buffer == "0" && "xbo".Contains(Buffer[pos]))
         {
             buffer += Buffer[pos];
+            pos++;
+        }
+
+        while(pos < Buffer.Length && char.IsDigit(Buffer[pos]))
+        {
+            buffer += Buffer[pos];
+            pos++;
+        }
+
+        if(pos >= Buffer.Length) return CreateToken(TokenType.Number, buffer);
+
+        if(!(pos < Buffer.Length - 1 && Buffer[pos] == '.' && char.IsDigit(Buffer[pos + 1])))
+            return CreateToken(TokenType.Number, buffer);
+
+        buffer += '.';
+        pos++;
+
+        while(pos < Buffer.Length && char.IsDigit(Buffer[pos]))
+        {
+            buffer += Buffer[pos];
+            pos++;
+        }
+
+        if(pos < Buffer.Length && "df".Contains(Buffer[pos]))
+        {
+            buffer += Buffer[pos];
+            pos++;
         }
 
         return CreateToken(TokenType.Number, buffer);
+
+        // string buffer = "";
+        // int pos;
+        // for (pos = Position;
+        //     pos < Buffer.Length &&
+        //         (char.IsDigit(Buffer[pos]) || "xbo._df".Contains(Buffer[pos]));
+        //     pos++)
+        // {
+        //     buffer += Buffer[pos];
+        // }
+        //
+        // if(buffer.Last() == '.') buffer = buffer.Substring(0, buffer.Length - 1);
+        // return CreateToken(TokenType.Number, buffer);
     }
 
     private Token ReadOperatorToken()
