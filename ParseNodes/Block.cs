@@ -82,3 +82,15 @@ public struct ElseIfNode : IBlockLineNode
         return $"Else if\n{Condition}\n{Block}";
     }
 }
+
+public struct WhileNode : IBlockLineNode
+{
+    public IExpression? Condition;
+    public BlockNode Block;
+    public bool Do;
+
+    public override string ToString()
+    {
+        return $"While{(Do ? " Do" : "")}\n{Condition}\n{Block}";
+    }
+}

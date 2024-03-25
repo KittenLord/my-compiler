@@ -22,8 +22,11 @@ public struct ParseError
     public static ParseError InvalidFunctionDefinition(Token token)
         => new ParseError($"Invalid function definition. Functions are defined like this:\n\tfn name(type1 arg1, type2 arg2) -> retType {{ ... }}", token.Line, token.Char);
 
+    public static ParseError InvalidDoWhile(Token token)
+        => new ParseError($"Invalid do while block. Correct syntax:\n\tdo while condition {{ ... }}", token.Line, token.Char);
+
     public static ParseError InvalidVarDeclaration(Token token)
-        => new ParseError($"Invalid variable declaration. Declare a variable like this:\n\tlet [type] name = value;", token.Line, token.Char);
+        => new ParseError($"Invalid variable declaration. Declare a variable like this:\n\tlet type name = value;", token.Line, token.Char);
 
     public static ParseError InvalidArgumentDefinition(Token token)
         => new ParseError($"Invalid argument definition", token.Line, token.Char);
@@ -281,6 +284,8 @@ ParseBlock:
             else if(token.Is(TokenType.Mut)) block.Lines.Add(ParseMutation(errors));
             else if(token.Is(TokenType.If)) { block.Lines.Add(ParseIf(errors)); continue; }
             else if(token.Is(TokenType.Else)) { block.Lines.Add(ParseElse(errors)); continue; }
+            else if(token.Is(TokenType.While)) { block.Lines.Add(ParseWhile(errors)); continue; }
+            else if(token.Is(TokenType.Do)) { block.Lines.Add(ParseDoWhile(errors)); continue; }
             else 
             {
                 errors.Add(ParseError.UnexpectedToken(token, TokenType.Let));
@@ -303,6 +308,43 @@ ParseBlock:
         else Tokenizer.Consume();
 
         return block;
+    }
+
+    private IBlockLineNode ParseDoWhile(List<ParseError> errors)
+    {
+        var origin = Tokenizer.Consume(); // do
+
+        if(Tokenizer.Peek().Is(TokenType.While))
+        {
+            var w = ParseWhile(errors);
+            w.Do = true;
+            return w;
+        }
+
+        errors.Add(ParseError.InvalidDoWhile(origin));
+        Token token;
+        while((token = Tokenizer.Peek()).IsNot(TokenType.EOF, TokenType.While)) 
+            Tokenizer.Consume();
+
+        if(token.Is(TokenType.While))
+        {
+            var w = ParseWhile(errors);
+            w.Do = true;
+            return w;
+        }
+
+        return new BlockNode();
+    }
+
+    private WhileNode ParseWhile(List<ParseError> errors)
+    {
+        WhileNode whileNode = new();
+        Tokenizer.Consume(); // while
+
+        whileNode.Condition = ParseExpression(errors);
+        whileNode.Block = ParseBlock(errors);
+
+        return whileNode;
     }
 
     private IfNode ParseIf(List<ParseError> errors)
