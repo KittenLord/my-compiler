@@ -13,14 +13,17 @@ public struct ParseError
     public override string ToString()
         => $"{Error}\n\tat [ {Line} : {Char} ]";
 
-    public static ParseError InvalidFunctionDefinition(Token token)
-        => new ParseError($"Invalid function definition. Functions are defined like this:\n\tfn name(type1 arg1, type2 arg2) -> retType {{ ... }}", token.Line, token.Char);
-
     public static ParseError NoFunctionReturnType(Token token)
         => new ParseError($"Function definition has -> operator, but no return type specified", token.Line, token.Char);
 
+    public static ParseError InvalidFunctionDefinition(Token token)
+        => new ParseError($"Invalid function definition. Functions are defined like this:\n\tfn name(type1 arg1, type2 arg2) -> retType {{ ... }}", token.Line, token.Char);
+
     public static ParseError InvalidArgumentDefinition(Token token)
         => new ParseError($"Invalid argument definition", token.Line, token.Char);
+
+    public static ParseError InvalidArrayDefinition(Token token)
+        => new ParseError($"Invalid array definition:\n\twrong: string[]\n\tcorrect: string*", token.Line, token.Char);
 
     public static ParseError UnexpectedToken(Token token, params TokenType[] expected)
         => new ParseError($"Unexpected token {{{token.Type}}} (expected: [{string.Join(", ", expected)}])", token.Line, token.Char);
@@ -171,6 +174,22 @@ ParseBlock:
         return null;
     }
 
+    private TypeNode ParseType(List<ParseError> errors)
+    {
+        TypeNode type = new();
+
+        type.Base = Tokenizer.Consume();
+        type.Indexes = 0;
+
+        while(Tokenizer.Peek().Is(TokenType.Mul))
+        {
+            type.Indexes++;
+            Tokenizer.Consume();
+        }
+
+        return type;
+    }
+
     private List<FnDefParamNode> ParseFunctionDefinitionParams(List<ParseError> errors)
     {
         var args = new List<FnDefParamNode>();
@@ -180,17 +199,26 @@ ParseBlock:
 
         while((token = Tokenizer.Peek()).IsNot(TokenType.RParen))
         {
-            token = Tokenizer.Consume();
             if(token.Is(TokenType.Id)) // type
             {
                 var param = new FnDefParamNode();
-                param.Type = token;
+                param.Type = ParseType(errors);
 
                 token = Tokenizer.Peek(); // argName
                 if(token.IsNot(TokenType.Id))
                 {
                     errors.Add(ParseError.NoArgumentName(token));
-                    while((token = Tokenizer.Peek()).IsNot(TokenType.Comma, TokenType.RParen, TokenType.EOF)) { Tokenizer.Consume(); }
+
+                    if(Tokenizer.Peek().Is(TokenType.LBrack))
+                    {
+                        errors.Add(ParseError.InvalidArrayDefinition(param.Type.Value.Base!.Value));
+                    }
+
+                    while((token = Tokenizer.Peek()).IsNot(TokenType.Comma, TokenType.RParen, TokenType.EOF)) 
+                    { 
+                        if(token.Is(TokenType.Id)) param.Id = token;
+                        Tokenizer.Consume(); 
+                    }
                     if(token.Is(TokenType.Comma)) Tokenizer.Consume();
                     args.Add(param);
                     continue;
@@ -242,12 +270,210 @@ ParseBlock:
         Token token;
         while((token = Tokenizer.Peek()).IsNot(TokenType.RCurly, TokenType.EOF))
         {
-            token = Tokenizer.Consume();
+            if(token.Is(TokenType.Let)) block.Lines.Add(ParseDeclaration(errors));
+            else 
+            {
+                errors.Add(ParseError.UnexpectedToken(token, TokenType.Let));
+                Tokenizer.Consume();
+                continue;
+            }
+
+            if(Tokenizer.Peek().Is(TokenType.Semi)) Tokenizer.Consume();
+            else if(Tokenizer.Peek().Is(TokenType.RCurly) && block.Lines.Count > 0) 
+                block.Lines[block.Lines.Count - 1].Return = true;
         }
 
         if(token.IsNot(TokenType.RCurly)) { errors.Add(ParseError.UnclosedDelimiter(begin)); }
         else Tokenizer.Consume();
 
         return block;
+    }
+
+    private DeclarationNode ParseDeclaration(List<ParseError> errors)
+    {
+        DeclarationNode declaration = new();
+        var letToken = Tokenizer.Consume(); // let
+
+        var token = Tokenizer.Peek(); // type/id
+        if(token.IsNot(TokenType.Id))
+        {
+            while((token = Tokenizer.Peek()).IsNot(TokenType.Semi, TokenType.RCurly, TokenType.Id)) 
+                Tokenizer.Consume();
+            if(token.IsNot(TokenType.Id)) return declaration;
+        }
+
+        declaration.Type = ParseType(errors);
+
+        token = Tokenizer.Peek(); // id/=
+        if(token.IsNot(TokenType.Id, TokenType.Assign))
+        {
+            while((token = Tokenizer.Peek()).IsNot(TokenType.Semi, TokenType.RCurly, TokenType.Id, TokenType.Assign)) 
+                Tokenizer.Consume();
+            if(token.IsNot(TokenType.Id, TokenType.Assign)) return declaration;
+        }
+
+        if(token.Is(TokenType.Id))
+        {
+            declaration.Id = token;
+            Tokenizer.Consume();
+        }
+        else
+        {
+            declaration.Id = declaration.Type.Value.Base;
+            declaration.Type = null;
+            System.Console.WriteLine($"test");
+        }
+
+        token = Tokenizer.Peek();
+        if(token.IsNot(TokenType.Assign))
+        {
+            while((token = Tokenizer.Peek()).IsNot(TokenType.Semi, TokenType.RCurly, TokenType.Assign)) 
+                Tokenizer.Consume();
+            if(token.IsNot(TokenType.Assign)) return declaration;
+        }
+
+        Tokenizer.Consume(); // =
+
+        declaration.Expr = ParseExpression(errors);
+        return declaration;
+    }
+
+    private IExpression ParseExpression(List<ParseError> errors, int minPrecedence = int.MinValue)
+    {
+        IExpression expr;
+        var lhs = ParseExpressionLeaf(errors);
+
+        while(true)
+        {
+            expr = ParseExpressionIncreasingPrec(errors, lhs, minPrecedence);
+            if(expr == lhs) return expr;
+            lhs = expr;
+        }
+    }
+
+    private IExpression ParseExpressionIncreasingPrec(List<ParseError> errors, IExpression lhs, int minPrecedence)
+    {
+        if(!Tokenizer.Peek().IsBinaryOperator()) return lhs;
+        
+        var opToken = Tokenizer.Consume();
+        var precedence = opToken.GetBinaryOperatorPrecedence();
+        if(precedence <= minPrecedence)
+        {
+            return lhs;
+        }
+        else
+        {
+            OpExprNode op = new();
+            op.Operator = opToken;
+            op.Lhs = lhs;
+            op.Rhs = ParseExpression(errors, precedence);
+            return op;
+        }
+    }
+
+    private IExpression ParseExpressionLeaf(List<ParseError> errors)
+    {
+        var token = Tokenizer.Peek();
+
+        if(token.Is(TokenType.LCurly)) return ParseBlock(errors);
+        else if(token.Is(TokenType.Id, TokenType.Number, TokenType.String, TokenType.True, TokenType.False))
+            return ParseChainLiteral(errors);
+        else if(token.Is(TokenType.Not)) return ParseUnaryOperator(errors);
+
+        errors.Add(ParseError.UnexpectedToken(token, TokenType.LCurly, TokenType.Not, TokenType.Id, TokenType.Number, TokenType.String, TokenType.True, TokenType.False));
+
+        while((token = Tokenizer.Peek()).IsNot(TokenType.LCurly, TokenType.Not, TokenType.Id, TokenType.Number, TokenType.String, TokenType.True, TokenType.False, TokenType.RCurly, TokenType.EOF, TokenType.Semi))
+            Tokenizer.Consume();
+
+        if(token.Is(TokenType.RCurly, TokenType.EOF, TokenType.Semi)) return new BlockNode();
+        return ParseExpressionLeaf(errors);
+    }
+
+    private UnOpExtrNode ParseUnaryOperator(List<ParseError> errors)
+    {
+        UnOpExtrNode un = new();
+
+        un.Operator = Tokenizer.Consume();
+        un.Expr = ParseExpressionLeaf(errors);
+
+        return un;
+    }
+
+    private ChainLitExprNode ParseChainLiteral(List<ParseError> errors)
+    {
+        ChainLitExprNode chain = new();
+
+        var token = Tokenizer.Peek();
+        while((token = Tokenizer.Peek()).Is(TokenType.Id, TokenType.Number, TokenType.String, TokenType.True, TokenType.False))
+        {
+            chain.Chain.Add(ParseSingleLiteral(errors));
+
+            if(Tokenizer.Peek().Is(TokenType.Dot)) { Tokenizer.Consume(); }
+            else break;
+        }
+
+        return chain;
+    }
+
+    private ILiteral ParseSingleLiteral(List<ParseError> errors)
+    {
+        var origin = Tokenizer.Consume();
+        var next = Tokenizer.Peek();
+
+        if(next.Is(TokenType.LParen))
+        {
+            Tokenizer.Consume();
+            FuncExprNode func = new();
+
+            while((next = Tokenizer.Peek()).IsNot(TokenType.RParen, TokenType.EOF))
+            {
+                func.Args.Add(ParseExpression(errors));
+
+                if(Tokenizer.Peek().Is(TokenType.Comma)) Tokenizer.Consume();
+                else if(Tokenizer.Peek().Is(TokenType.RParen)) {}
+                else
+                {
+                    errors.Add(ParseError.UnexpectedToken(Tokenizer.Peek(), TokenType.Comma, TokenType.RParen));
+                    while((next = Tokenizer.Peek()).IsNot(TokenType.Comma, TokenType.RParen, TokenType.EOF)) Tokenizer.Consume();
+                    if(Tokenizer.Peek().Is(TokenType.Comma)) Tokenizer.Consume();
+                }
+            }
+
+            if(next.IsNot(TokenType.RParen))
+            {
+                errors.Add(ParseError.UnexpectedToken(next, TokenType.RParen));
+            }
+
+            return func;
+        }
+        else if(next.Is(TokenType.LBrack))
+        {
+            Tokenizer.Consume();
+            ArrayExprNode array = new();
+
+            LiteralExprNode arrayOrigin = new();
+            arrayOrigin.Literal = origin;
+
+            array.Array = arrayOrigin;
+            array.Index = ParseExpression(errors);
+
+            if(Tokenizer.Peek().Is(TokenType.RBrack))
+            {
+                Tokenizer.Consume();
+                return array;
+            }
+
+            errors.Add(ParseError.UnexpectedToken(Tokenizer.Peek(), TokenType.RBrack));
+            while((next = Tokenizer.Peek()).IsNot(TokenType.RBrack, TokenType.RCurly, TokenType.Semi, TokenType.EOF))
+                Tokenizer.Consume();
+            if(next.Is(TokenType.RBrack)) Tokenizer.Consume();
+            return array;
+        }
+        else 
+        {
+            var literal = new LiteralExprNode();
+            literal.Literal = origin;
+            return literal;
+        }
     }
 }

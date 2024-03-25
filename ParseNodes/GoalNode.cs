@@ -11,6 +11,6 @@ public struct GoalNode
 
     public override string ToString()
     {
-        return string.Join("\n", Functions);
+        return string.Join("\n\n", Functions);
     }
 }
