@@ -9,5 +9,9 @@ Here is the current planned features list:
 - For some reason I made it look like Rust a lot
 - Compiled language (will probably use NASM)
 - No LLVM, custom IR and optimizations
-- Only stack memory allocation, because pointers are too hard (may rethink)
+- I will indeed probably rethink this one, cuz otherwise the language isn't at all practical ~~Only stack memory allocation, because pointers are too hard (may rethink)~~
 - No type stuff besides primitives, arrays and structs (maybe unions as well?)
+
+TODO:
+- [ ] Rewrite the single literal parser (so that chained array dereferences/function indexation is possible)
+- [ ] Add pointers (@)
