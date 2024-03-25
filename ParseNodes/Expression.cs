@@ -68,7 +68,7 @@ public struct FuncExprNode : ILiteral
 
     public override string ToString()
     {
-        return $"Func\n{string.Join("", Args.Select(s => "\n->" + s.ToString())).Indent()}";
+        return $"Func {Func}{string.Join("", Args.Select(s => "\n->" + s.ToString())).Indent()}";
     }
 
     public List<IExpression> Args = new();

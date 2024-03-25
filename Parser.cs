@@ -502,6 +502,7 @@ ParseBlock:
         {
             Tokenizer.Consume();
             FuncExprNode func = new();
+            func.Func = origin;
 
             while((next = Tokenizer.Peek()).IsNot(TokenType.RParen, TokenType.EOF))
             {
