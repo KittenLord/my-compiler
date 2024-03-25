@@ -288,7 +288,8 @@ ParseBlock:
             else if(token.Is(TokenType.Do)) { block.Lines.Add(ParseDoWhile(errors)); continue; }
             else 
             {
-                errors.Add(ParseError.UnexpectedToken(token, TokenType.Let));
+                errors.Add(ParseError.UnexpectedToken(token, 
+                    TokenType.Let, TokenType.While, TokenType.Mut, TokenType.If));
                 Tokenizer.Consume();
                 continue;
             }
