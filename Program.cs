@@ -16,7 +16,7 @@ public class Program
         var result = parser.Parse();
 
         System.Console.WriteLine($"{result}");
-        System.Console.WriteLine($"{parser.Success}");
+        System.Console.WriteLine($"\n{parser.Success}");
     }
 
     public static void RunTokenizer(string code)

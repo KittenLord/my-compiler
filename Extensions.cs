@@ -21,9 +21,11 @@ public static class Extensions
                         TokenType.ModAsgn, TokenType.ModNegAsgn);
     }
 
-    public static bool IsValue(this Token token)
+    public static bool CanStartExpression(this Token token)
     {
-        return token.Is(TokenType.Id, TokenType.Number, TokenType.String, TokenType.True, TokenType.False);
+        return token.Is(TokenType.Id, TokenType.Number, TokenType.String, 
+                        TokenType.True, TokenType.False,
+                        TokenType.LCurly);
     }
 
     public static int GetBinaryOperatorPrecedence(this Token token)

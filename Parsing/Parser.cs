@@ -300,7 +300,13 @@ End:
 
         while(Peek().IsNot(TokenType.RCurly, TokenType.EOF))
         {
-            Consume();
+            if(Peek().Is(TokenType.Let)) { block.Lines.Add(ParseLet()); }
+            else if(Peek().CanStartExpression()) { block.Lines.Add(ParseExpression()); }
+
+            if(Peek().Is(TokenType.RCurly)) { block.ReturnLast = true; continue; }
+            if(Peek().Is(TokenType.Semi)) { Consume(); continue; }
+
+            Error("", "", Peek().Position);
         }
 
         if(Peek().Is(TokenType.RCurly)) { Consume(); }
@@ -325,7 +331,7 @@ Name:
         if(Peek().Is(TokenType.Id))
         {
             let.Name = Consume().Value;
-            goto Expression;
+            goto Assign;
         }
         else if(Peek().Is(TokenType.Assign))
         {
@@ -333,7 +339,7 @@ Name:
             {
                 let.Name = type.Name;
                 let.Type = new TypeNoneNode();
-                goto Expression;
+                goto Assign;
             }
             else
             {
@@ -341,7 +347,7 @@ Name:
             }
         }
 
-Expression:
+Assign:
 
         if(Peek().Is(TokenType.Assign)) 
         {
@@ -352,20 +358,78 @@ Expression:
 
         }
 
+Expression:
+
+        if(Peek().CanStartExpression())
+        {
+            let.Expression = ParseExpression();
+        }
+        else
+        {
+
+        }
+
         return let;
+    }
+
+    private IExpressionNode ParseExpression(int precedence = int.MinValue)
+    {
+        IExpressionNode expression;
+        var lhs = ParseLeaf();
+
+        while(true)
+        {
+            expression = ParseExpressionIncreasingPrecedence(lhs, precedence);
+            if(expression == lhs) return expression;
+            lhs = expression;
+        }
+    }
+
+    private IExpressionNode ParseExpressionIncreasingPrecedence(IExpressionNode expr, int precedence)
+    {
+        if(!Peek().IsBinaryOperator()) return expr;
+
+        var p = Peek().GetBinaryOperatorPrecedence();
+        if(p < precedence) return expr;
+        else return new OperatorExpressionNode(Consume(), expr, ParseExpression(p));
     }
 
     private IExpressionNode ParseLeaf()
     {
-        IExpressionNode? leaf = null;
+        IAccessible leaf;
 
-        if(Peek().Is(TokenType.LCurly)) { leaf = ParseBlock(); }
+        if(Peek().Is(TokenType.LCurly)) 
+            { leaf = ParseBlock(); }
+        else if(Peek().Is(TokenType.Number)) 
+            { leaf = new LiteralExpressionNode(new NumberLiteralNode(Consume().Value)); }
+        else if(Peek().Is(TokenType.String))
+            { leaf = new LiteralExpressionNode(new StringLiteralValue(Consume().Value)); }
+        else if(Peek().Is(TokenType.True, TokenType.False))
+            { leaf = new LiteralExpressionNode(new BoolLiteralNode(Consume().Is(TokenType.True))); }
+        else if(Peek().Is(TokenType.Id))
+            { leaf = new LiteralExpressionNode(new IdLiteralNode(Consume().Value)); }
+        // NOTE: If any exceptions fire, the compiler needs to be fixed
+        else throw new Exception(); 
 
-        while(Peek().Is(TokenType.Pointer, TokenType.LParen, TokenType.LBrack, TokenType.Dot))
+        while(Peek(out var next).Is(TokenType.Pointer, TokenType.LParen, TokenType.LBrack, TokenType.Dot))
         {
-            Consume();
+            if(next.Is(TokenType.Pointer)) { leaf = new PointerAccessorNode(leaf); Consume(); }
+            else if(next.Is(TokenType.Dot))
+            {
+                Consume();
+                if(Peek().Is(TokenType.Id))
+                {
+                    leaf = new MemberAccessorNode(leaf, Consume().Value);
+                    continue;
+                }
+                else
+                {
+                    Error("", "", Peek().Position);
+                    continue;
+                }
+            }
         }
 
-        return leaf!;
+        return leaf;
     }
 }

@@ -19,22 +19,28 @@ public struct OperatorExpressionNode : IExpressionNode
         Left = lhs;
         Right = rhs;
     }
+
+    public override string ToString() => $"{Operator.Type}\n{Left.Indent()}\n{Right.Indent()}";
 }
 
 public struct LiteralExpressionNode : IAccessible
 {
-    public Token Literal;
+    public ILiteralNode Literal;
 
-    public LiteralExpressionNode(Token literal)
+    public LiteralExpressionNode(ILiteralNode literal)
     {
         Literal = literal;
     }
+
+    public override string ToString() => $"{Literal}";
 }
 
 public struct ArrayAccessorNode : IAccessible
 {
     public IAccessible Base;
     public IExpressionNode Index;
+
+    public override string ToString() => $"{Base} *\n{Index}";
 }
 
 public struct FuncAccessorNode : IAccessible
@@ -47,15 +53,32 @@ public struct FuncAccessorNode : IAccessible
         Base = a;
         Arguments = new();
     }
+
+    public override string ToString() => $"{Base} ${Arguments.ToLines().Indent()}";
 }
 
 public struct PointerAccessorNode : IAccessible
 {
     public IAccessible Base;
+
+    public PointerAccessorNode(IAccessible b)
+    {
+        Base = b;
+    }
+
+    public override string ToString() => $"{Base} @";
 }
 
 public struct MemberAccessorNode : IAccessible
 {
     public IAccessible Base;
     public string Member;
+
+    public MemberAccessorNode(IAccessible b, string member)
+    {
+        Base = b;
+        Member = member;
+    }
+
+    public override string ToString() => $"{Base} -> {Member}";
 }
