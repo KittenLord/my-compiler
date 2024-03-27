@@ -11,13 +11,12 @@ public class Program
         var code = File.ReadAllText(path);
 
         RunTokenizer(code);
-
         var tokenizer = new Tokenizer(code);
         var parser = new Parser(tokenizer);
         var result = parser.Parse();
 
-        result.Errors.ForEach(error => Console.WriteLine(error + "\n"));
-        Console.WriteLine(result.Goal);
+        System.Console.WriteLine($"{result}");
+        System.Console.WriteLine($"{parser.Success}");
     }
 
     public static void RunTokenizer(string code)

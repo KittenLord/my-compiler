@@ -44,8 +44,13 @@ public static class Extensions
         };
     }
 
-    public static string Indent(this string text)
+    public static string Indent(this object text)
     {
-        return string.Join("\n", text.Split('\n').Select(s => "    " + s));
+        return string.Join("\n", (text?.ToString() ?? "").Split('\n').Select(s => "    " + s));
+    }
+
+    public static string ToLines<T>(this IEnumerable<T> l)
+    {
+        return string.Join("", l.Select(v => "\n" + v?.ToString()));
     }
 }

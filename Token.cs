@@ -8,16 +8,18 @@ public enum TokenType
     Invalid, // an invalid token
     Let, // let
     Mut, // mut
+    Free, // free
     Fn, // fn
     If, // if
     Else, // else
+    For, // for
     From, // from
     To, // to
-    For, // for
-    Do, // do while
     While, // while
+    Do, // do while
     True, // true
     False, // false
+    Type, // type
     Return, // return
     Id, // identifier, i.e. variable/function name, type
 
@@ -61,6 +63,7 @@ public enum TokenType
     Semi, // ;
     Comma, // ,
     Dot, // .
+    Pointer, // @
 
     String, // " iabwdiuwab uidbawudb a"
 }
@@ -81,6 +84,8 @@ public struct Token
         Char = charn;
     }
 
+    public Position Position => new Position(Line, Char);
+
     public bool Is(params TokenType[] types)
     {
         var type = Type;
@@ -93,8 +98,22 @@ public struct Token
         return types.All(t => t != type);
     }
 
+    public bool IsEnd() => Type == TokenType.EOF;
+
     public override string ToString()
     {
         return $"{Type.ToString()}{(Value == " " ? "" : $" ({Value})")} at [{Line} : {Char}]";
+    }
+}
+
+public struct Position 
+{
+    public int Line;
+    public int Char;
+        
+    public Position(int line, int charn)
+    {
+        Line = line;
+        Char = charn;
     }
 }

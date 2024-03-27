@@ -75,6 +75,7 @@ public class Tokenizer
         if (Buffer[Position] == ';') return CreateToken(TokenType.Semi);
         if (Buffer[Position] == ',') return CreateToken(TokenType.Comma);
         if (Buffer[Position] == '.') return CreateToken(TokenType.Dot);
+        if (Buffer[Position] == '@') return CreateToken(TokenType.Pointer);
 
         // {}
         if (Buffer[Position] == '{') return CreateToken(TokenType.LCurly);
@@ -104,16 +105,18 @@ public class Tokenizer
 
         if (buffer == "let") return CreateToken(TokenType.Let, buffer);
         if (buffer == "mut") return CreateToken(TokenType.Mut, buffer);
+        if (buffer == "free") return CreateToken(TokenType.Free, buffer);
+        if (buffer == "fn") return CreateToken(TokenType.Fn, buffer);
         if (buffer == "if") return CreateToken(TokenType.If, buffer);
         if (buffer == "else") return CreateToken(TokenType.Else, buffer);
+        if (buffer == "for") return CreateToken(TokenType.For, buffer);
         if (buffer == "from") return CreateToken(TokenType.From, buffer);
         if (buffer == "to") return CreateToken(TokenType.To, buffer);
-        if (buffer == "do") return CreateToken(TokenType.Do, buffer);
-        if (buffer == "fn") return CreateToken(TokenType.Fn, buffer);
-        if (buffer == "for") return CreateToken(TokenType.For, buffer);
         if (buffer == "while") return CreateToken(TokenType.While, buffer);
+        if (buffer == "do") return CreateToken(TokenType.Do, buffer);
         if (buffer == "true") return CreateToken(TokenType.True, buffer);
         if (buffer == "false") return CreateToken(TokenType.False, buffer);
+        if (buffer == "type") return CreateToken(TokenType.Type, buffer);
         if (buffer == "return") return CreateToken(TokenType.Return, buffer);
         return CreateToken(TokenType.Id, buffer);
     }
