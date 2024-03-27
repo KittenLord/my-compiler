@@ -11,12 +11,22 @@ public class Program
         var code = File.ReadAllText(path);
 
         RunTokenizer(code);
+
+        Console.WriteLine();
+
         var tokenizer = new Tokenizer(code);
         var parser = new Parser(tokenizer);
         var result = parser.Parse();
 
-        System.Console.WriteLine($"{result}");
-        System.Console.WriteLine($"\n{parser.Success}");
+        Console.ForegroundColor = ConsoleColor.Red;
+        foreach(var error in parser.Errors)
+        {
+            Console.WriteLine(error);
+            Console.WriteLine();
+        }
+
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine(result);
     }
 
     public static void RunTokenizer(string code)

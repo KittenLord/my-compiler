@@ -5,16 +5,55 @@ using MyCompiler.Parsing;
 
 namespace MyCompiler;
 
+public static class ParseError
+{
+    public static string UnexpectedToken(Token token, params TokenType[] expected)
+        => $@"Unexpected token {token}
+    Expected: [{string.Join(", ", expected)}]";
+
+    public const string MissingFunctionName 
+        = "Function definition is missing a name";
+
+    public const string MissingFunctionArguments
+        = "Function definition is missing its arguments";
+
+    public const string InvalidFunctionDeclaration
+        = @"Function declaration is invalid. Declare a function like this:
+    fn NAME(TYPE1 ARG1, TYPE2 ARG2, ...) -> RETURN_TYPE { ... }";
+
+    public const string InvalidVariableDeclaration
+        = @"Variable declaration is invalid. Declare a variable like this:
+    let [TYPE] NAME = ...;";
+
+    public static string ExpectedType(Token token)
+        => @$"Expected a type, found: {token}";
+
+    public static string ExpectedExpression(Token token)
+        => @$"Expected an expression, found: {token}";
+
+    public static string UnclosedDelimiter(Token token)
+        => @$"Unclosed delimiter: {token}";
+
+    public const string MissingSemicolon
+        = @"Missing a semicolon. Only the last line of a block can be implicitly returned without a semicolon";
+
+    public static string UnexpectedLineBegin(Token token)
+        => @$"A block line can't start with token {token}. Did you miss an operator (+ - * /) ?";
+
+    public const string MissingVariableName
+        = "Variable declaration is missing its name";
+}
+
 public struct AttachedMessage
 {
-    public string Title;
     public string Message;
-
     public Position Position; 
 
-    public AttachedMessage(string title, string msg, Position position)
+    public override string ToString()
+        => $"{Message}\nat {Position}";
+
+    public AttachedMessage(string msg, Position position)
     {
-        Title = title;
         Message = msg;
         Position = position;
     }
@@ -33,14 +72,13 @@ public class Parser
         Errors = new();
     }
 
-    public void Error(string title, Position position, params object[] args) 
-        => Error(title, "", position, args);
+    private void Error(string message, Token token)
+        => Error(message, token.Position);
 
-    public void Error(string title, string message, Position position, params object[] args)
+    private void Error(string message, Position position)
     {
         Success = false;
-        var msg = string.Format(message, args);
-        Errors.Add(new AttachedMessage(title, msg, position));
+        Errors.Add(new AttachedMessage(message, position));
     }
 
     private Token Peek() { return Tokenizer.Peek(); }
@@ -107,7 +145,7 @@ public class Parser
             }
 
             // Shit
-            Error("", "", Peek().Position);
+            Error(ParseError.UnexpectedToken(Peek(), TokenType.Fn, TokenType.Type), Peek());
             Consume();
         }
 
@@ -130,13 +168,13 @@ Name:
             if(Peek().Is(TokenType.LParen))
             {
                 // Missing function name
-                Error("", "", Peek().Position);
+                Error(ParseError.MissingFunctionName, Peek());
                 goto Arguments;
             }
             else
             {
                 // Invalid function definition
-                Error("", "", Peek().Position);
+                Error(ParseError.InvalidFunctionDeclaration, fn.Position);
                 var recovery = ConsumeUntil(
                         (fn.Name is null ? TokenType.Id : TokenType.EOF), 
                         TokenType.LParen, 
@@ -161,13 +199,13 @@ Arguments:
             if(Peek().Is(TokenType.LCurly))
             {
                 // Missing arguments
-                Error("", "", Peek().Position);
+                Error(ParseError.MissingFunctionArguments, fn.Position);
                 goto Block;
             }
             else
             {
                 // Invalid function definition
-                Error("", "", Peek().Position);
+                Error(ParseError.InvalidFunctionDeclaration, fn.Position);
                 var recovery = ConsumeUntil(
                         TokenType.LParen, 
                         TokenType.LCurly);
@@ -184,13 +222,14 @@ ReturnValue:
         if(Peek().IsNot(TokenType.RetArrow))
         {
             // Invalid function definition
-            Error("", "", Peek().Position);
+            Error(ParseError.InvalidFunctionDeclaration, fn.Position);
             var recovery = ConsumeUntil(TokenType.RetArrow, TokenType.LCurly);
 
             if(recovery.IsEnd()) return fn;
             if(recovery.Is(TokenType.RetArrow)) goto ReturnValue;
             if(recovery.Is(TokenType.LCurly)) goto Block;
         }
+
         Consume();
         if(Peek().Is(TokenType.Id))
         {
@@ -200,7 +239,7 @@ ReturnValue:
         else
         {
             // Invalid function definition
-            Error("", "", Peek().Position);
+            Error(ParseError.InvalidFunctionDeclaration, fn.Position);
             var recovery = ConsumeUntil(TokenType.Id, TokenType.LCurly);
             if(recovery.IsEnd()) return fn;
             if(recovery.Is(TokenType.Id)) { fn.ReturnType = ParseType(); goto Block; }
@@ -216,7 +255,10 @@ Block:
         else
         {
             // Invalid function definition
-            Error("", "", Peek().Position);
+            Error(ParseError.InvalidFunctionDeclaration, fn.Position);
+            var recovery = ConsumeUntil(TokenType.LCurly);
+            if(recovery.IsEnd()) return fn;
+            if(recovery.Is(TokenType.LCurly)) goto Block;
         }
 
         return fn;
@@ -225,13 +267,14 @@ Block:
     private TupleNode ParseTuple()
     {
         TupleNode tuple = new();
-        Consume();
+        var delimiter = Consume();
 
         while(Peek().IsNot(TokenType.RParen, TokenType.EOF))
         {
             var element = new VariableNode();
 
 Type:
+
             if(Peek().Is(TokenType.Id))
             {
                 element.Type = ParseType();
@@ -239,7 +282,7 @@ Type:
             }
             else
             {
-                Error("", "", Peek().Position);
+                Error(ParseError.ExpectedType(Peek()), Peek());
                 var recovery = ConsumeUntil(TokenType.RParen, TokenType.Id);
                 if(recovery.IsEnd()) continue;
                 if(recovery.Is(TokenType.RParen)) continue;
@@ -254,7 +297,7 @@ Name:
             }
             else
             {
-                Error("", "", Peek().Position);
+                Error(ParseError.UnexpectedToken(Peek(), TokenType.Id), Peek());
                 var recovery = ConsumeUntil(TokenType.RParen, TokenType.Id);
                 if(recovery.IsEnd()) continue;
                 if(recovery.Is(TokenType.RParen)) continue;
@@ -267,13 +310,17 @@ End:
             if(Peek().Is(TokenType.Comma)) { Consume(); continue; }
             if(Peek().Is(TokenType.RParen)) { continue; }
 
-            Error("", "", Peek().Position);
+            Error(ParseError.UnexpectedToken(Peek(), TokenType.Comma, TokenType.RParen), Peek());
+
+            var rec = ConsumeUntil(TokenType.Comma, TokenType.RParen);
+            if(rec.IsEnd()) return tuple;
+            if(rec.Is(TokenType.Comma)) Consume();
         }
 
         if(Consume().Is(TokenType.EOF))
         {
             // Tuple definition is not closed
-            Error("", "", Peek().Position);
+            Error(ParseError.UnclosedDelimiter(delimiter), Peek());
         }
 
         return tuple;
@@ -296,21 +343,30 @@ End:
     private BlockNode ParseBlock()
     {
         BlockNode block = new();
-        Consume();
+        var delimiter = Consume();
 
         while(Peek().IsNot(TokenType.RCurly, TokenType.EOF))
         {
             if(Peek().Is(TokenType.Let)) { block.Lines.Add(ParseLet()); }
             else if(Peek().CanStartExpression()) { block.Lines.Add(ParseExpression()); }
+            else
+            {
+                Error(ParseError.UnexpectedLineBegin(Peek()), Peek());
+                while(!Peek().CanStartLine() && Peek().IsNot(TokenType.EOF, TokenType.Semi, TokenType.RCurly))
+                    Consume();
+            }
 
             if(Peek().Is(TokenType.RCurly)) { block.ReturnLast = true; continue; }
             if(Peek().Is(TokenType.Semi)) { Consume(); continue; }
 
-            Error("", "", Peek().Position);
+            Error(ParseError.MissingSemicolon, Peek());
         }
 
         if(Peek().Is(TokenType.RCurly)) { Consume(); }
-        else if(Peek().IsEnd()) { Error("", "", Peek().Position); }
+        else if(Peek().IsEnd()) 
+        { 
+            Error(ParseError.UnclosedDelimiter(delimiter), Peek()); 
+        }
 
         return block;
     }
@@ -321,13 +377,24 @@ End:
         Consume();
 
 Type:
+
         if(Peek().Is(TokenType.Id))
         {
             let.Type = ParseType();
             goto Name;
         }
+        else
+        {
+            Error(ParseError.ExpectedType(Peek()), Peek());
+            while(Peek().IsNot(TokenType.EOF, TokenType.Id, TokenType.Assign, TokenType.Semi, TokenType.RCurly))
+                Consume();
+            if(Peek().Is(TokenType.Id)) goto Type;
+            if(Peek().Is(TokenType.Assign)) goto Assign;
+            return let;
+        }
 
 Name:
+
         if(Peek().Is(TokenType.Id))
         {
             let.Name = Consume().Value;
@@ -343,8 +410,15 @@ Name:
             }
             else
             {
-
+                Error(ParseError.MissingVariableName, Peek());
             }
+        }
+        else
+        {
+            Error(ParseError.InvalidVariableDeclaration, Peek());
+            var recovery = ConsumeUntil(TokenType.Id, TokenType.Assign, TokenType.Semi, TokenType.RCurly);
+            if(recovery.Is(TokenType.Id, TokenType.Assign)) goto Name;
+            return let;
         }
 
 Assign:
@@ -355,7 +429,10 @@ Assign:
         }
         else
         {
-
+            Error(ParseError.InvalidVariableDeclaration, Peek());
+            var recovery = ConsumeUntil(TokenType.Assign, TokenType.Semi, TokenType.RCurly);
+            if(recovery.Is(TokenType.Assign)) goto Assign;
+            return let;
         }
 
 Expression:
@@ -366,7 +443,11 @@ Expression:
         }
         else
         {
-
+            Error(ParseError.ExpectedExpression(Peek()), Peek());
+            while(!Peek().CanStartExpression() && Peek().IsNot(TokenType.Semi, TokenType.RCurly, TokenType.EOF))
+                Consume();
+            if(Peek().CanStartExpression()) goto Expression;
+            return let;
         }
 
         return let;
@@ -424,9 +505,88 @@ Expression:
                 }
                 else
                 {
-                    Error("", "", Peek().Position);
+                    Error(ParseError.UnexpectedToken(Peek(), TokenType.Id), Peek());
+                    while(Peek().Is(
+                                TokenType.Id,
+                                TokenType.RCurly, TokenType.Semi, TokenType.EOF,
+                                TokenType.Pointer, TokenType.LParen, TokenType.LBrack, TokenType.Dot))
+                        Consume();
+                    if(Peek().Is(TokenType.Id)) leaf = new MemberAccessorNode(leaf, Consume().Value);
+                    else if(Peek().Is(TokenType.RCurly, TokenType.Semi, TokenType.EOF)) return leaf;
                     continue;
                 }
+            }
+            else if(next.Is(TokenType.LBrack))
+            {
+                Consume();
+                if(Peek().CanStartExpression())
+                {
+                    leaf = new ArrayAccessorNode(leaf, ParseExpression());
+
+                    if(Peek().Is(TokenType.RBrack)) { Consume(); continue; }
+                    else
+                    {
+                        Error(ParseError.UnexpectedToken(Peek(), TokenType.RBrack), Peek());
+                        var recovery = ConsumeUntil(TokenType.RBrack, TokenType.RCurly, TokenType.Semi);
+                        if(recovery.Is(TokenType.RBrack)) { Consume(); }
+                        continue;
+                    }
+                }
+                else
+                {
+                    Error(ParseError.ExpectedExpression(Peek()), Peek());
+                    while(!Peek().CanStartExpression() && 
+                           Peek().IsNot(TokenType.EOF, TokenType.Semi, TokenType.RCurly,
+                                        TokenType.RBrack))
+                        Consume();
+                    if(Peek().Is(TokenType.RBrack)) continue;
+                    return leaf;
+                }
+            }
+            else if(next.Is(TokenType.LParen))
+            {
+                var func = new FuncAccessorNode(leaf);
+                var delimiter = Consume();
+
+                while(Peek().IsNot(TokenType.RParen, TokenType.EOF))
+                {
+                    if(Peek().CanStartExpression())
+                    {
+                        func.Arguments.Add(ParseExpression());
+
+                        if(Peek().Is(TokenType.Comma)) { Consume(); continue; }
+                        if(Peek().Is(TokenType.RParen)) { continue; } 
+
+                        Error(ParseError.UnexpectedToken(Peek(), TokenType.Comma, TokenType.RParen), Peek());
+                        var recovery = ConsumeUntil(TokenType.Comma, TokenType.RParen,
+                                                    TokenType.EOF, TokenType.RCurly, TokenType.Semi);
+                        if(recovery.Is(TokenType.Comma)) { Consume(); continue; }
+                        if(recovery.Is(TokenType.RParen)) { continue; }
+                        return leaf;
+                    }
+                    else
+                    {
+                        Error(ParseError.ExpectedExpression(Peek()), Peek());
+                        while(!Peek().CanStartExpression() && 
+                               Peek().IsNot(TokenType.Semi, TokenType.RCurly, TokenType.EOF,
+                                            TokenType.Comma, TokenType.RParen))
+                            Consume();
+                        // FIXME: If I will introduce unit type, put it here
+                        if(Peek().Is(TokenType.Comma)) 
+                            { func.Arguments.Add(new LiteralExpressionNode(new BoolLiteralNode(true))); Consume(); continue; }
+                        if(Peek().Is(TokenType.RParen)) 
+                            { func.Arguments.Add(new LiteralExpressionNode(new BoolLiteralNode(true))); continue; }
+                    }
+                }
+
+                if(Peek().Is(TokenType.RParen)) { Consume(); }
+                else 
+                {
+                    Error(ParseError.UnclosedDelimiter(delimiter), Peek());
+                }
+
+                leaf = func;
+                continue;
             }
         }
 

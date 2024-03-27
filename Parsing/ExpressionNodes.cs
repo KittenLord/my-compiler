@@ -40,7 +40,13 @@ public struct ArrayAccessorNode : IAccessible
     public IAccessible Base;
     public IExpressionNode Index;
 
-    public override string ToString() => $"{Base} *\n{Index}";
+    public ArrayAccessorNode(IAccessible b, IExpressionNode index)
+    {
+        Base = b;
+        Index = index;
+    }
+
+    public override string ToString() => $"{Base} *\n{Index.Indent()}";
 }
 
 public struct FuncAccessorNode : IAccessible

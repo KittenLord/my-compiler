@@ -15,7 +15,7 @@ public struct IdLiteralNode : ILiteralNode
         Id = id;
     }
 
-    public override string ToString() => $"{Id} :: id";
+    public override string ToString() => $"{Id} : id";
 }
 
 public struct NumberLiteralNode : ILiteralNode
@@ -27,7 +27,7 @@ public struct NumberLiteralNode : ILiteralNode
         Value = value;
     }
 
-    public override string ToString() => $"{Value} :: number";
+    public override string ToString() => $"{Value} : number";
 }
 
 public struct BoolLiteralNode : ILiteralNode
@@ -39,7 +39,7 @@ public struct BoolLiteralNode : ILiteralNode
         Value = value;
     }
 
-    public override string ToString() => $"{Value} :: bool";
+    public override string ToString() => $"{Value} : bool";
 }
 
 public struct StringLiteralValue : ILiteralNode
@@ -51,5 +51,5 @@ public struct StringLiteralValue : ILiteralNode
         Value = value;
     }
 
-    public override string ToString() => $"{Value} :: string";
+    public override string ToString() => $"\"{Value}\" : string";
 }

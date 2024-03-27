@@ -26,5 +26,5 @@ public struct LetDefinitionNode : IBlockLineNode
     public string? Name;
     public IExpressionNode Expression;
 
-    public override string ToString() => $"Let\n{Name.Indent()} :: {Type}\n{Expression.Indent()}";
+    public override string ToString() => $"Let\n{Name?.Indent() ?? ""} : {Type}\n{Expression.Indent()}";
 }

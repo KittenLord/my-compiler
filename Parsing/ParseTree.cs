@@ -34,7 +34,7 @@ public struct FunctionDefinitionNode
     }
 
     public override string ToString() 
-        => $"Function\n{Name.Indent()}{Arguments.ToLines().Indent()}\n{("-> " + ReturnType.ToString()).Indent()}\n{Block.Indent()}";
+        => $"Function\n{Name?.Indent() ?? ""}{Arguments.ToLines().Indent()}\n{("-> " + ReturnType.ToString()).Indent()}\n{Block.Indent()}";
 }
 
 public struct VariableNode
@@ -42,7 +42,7 @@ public struct VariableNode
     public ITypeNode? Type;
     public string? Name;
 
-    public override string ToString() => $"{Name} :: {Type}";
+    public override string ToString() => $"{Name} : {Type}";
 }
 
 public struct TupleNode

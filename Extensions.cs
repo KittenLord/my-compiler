@@ -28,6 +28,14 @@ public static class Extensions
                         TokenType.LCurly);
     }
 
+    public static bool CanStartLine(this Token token)
+    {
+        return token.CanStartExpression() || 
+               token.Is(TokenType.Let, TokenType.Mut, TokenType.Free,
+                        TokenType.If, TokenType.Else,
+                        TokenType.For, TokenType.Do, TokenType.While);
+    }
+
     public static int GetBinaryOperatorPrecedence(this Token token)
     {
         return token.Type switch

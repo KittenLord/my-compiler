@@ -1,3 +1,6 @@
-fn test() {
-    let a = 5 + { aboba - 3.string.trim };
+fn fnn() {
+    {
+        {
+        }
+    }
 }

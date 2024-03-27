@@ -76,6 +76,8 @@ public struct Token
     public int Line;
     public int Char;
 
+    public override string ToString() => this.Type.ToString();
+
     public Token(TokenType type, int line, int charn, string value = "")
     {
         Type = type;
@@ -99,17 +101,15 @@ public struct Token
     }
 
     public bool IsEnd() => Type == TokenType.EOF;
-
-    public override string ToString()
-    {
-        return $"{Type.ToString()}{(Value == " " ? "" : $" ({Value})")} at [{Line} : {Char}]";
-    }
 }
 
 public struct Position 
 {
     public int Line;
     public int Char;
+
+    public override string ToString()
+        => $"[ {Line} : {Char} ]";
         
     public Position(int line, int charn)
     {
