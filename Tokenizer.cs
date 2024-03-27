@@ -42,7 +42,7 @@ public class Tokenizer
         if (PeekValue is not null) return PeekValue.Value;
 
         if (Buffer == "") return CreateToken(TokenType.EOF);
-        if (Position >= Buffer.Length - 1) return CreateToken(TokenType.EOF);
+        if (Position >= Buffer.Length) return CreateToken(TokenType.EOF);
 
         while (Position < Buffer.Length && char.IsWhiteSpace(Buffer[Position]))
         {
@@ -55,12 +55,12 @@ public class Tokenizer
                 Line++;
             }
         }
-        if (Position >= Buffer.Length - 1) return CreateToken(TokenType.EOF);
+        if (Position >= Buffer.Length) return CreateToken(TokenType.EOF);
 
 
         if(Position + 1 < Buffer.Length && Buffer[Position] == '/' && Buffer[Position + 1] == '/')
         {
-            while(Position < Buffer.Length && !char.IsWhiteSpace(Buffer[Position]))
+            while(Position < Buffer.Length && Buffer[Position] != '\n')
             {
                 Position++;
             }
@@ -90,7 +90,6 @@ public class Tokenizer
         if (Buffer[Position] == ']') return CreateToken(TokenType.RBrack);
 
         if (Buffer[Position] == '"') return ReadStringToken();
-
 
         return CreateToken(TokenType.Invalid, Buffer[Position].ToString());
     }

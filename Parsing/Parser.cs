@@ -42,6 +42,9 @@ public static class ParseError
 
     public const string MissingVariableName
         = "Variable declaration is missing its name";
+
+    public const string ExpectedMutableOperator
+        = @"Expected a mutation operator (= += -= *= /=)";
 }
 
 public struct AttachedMessage
@@ -347,8 +350,13 @@ End:
 
         while(Peek().IsNot(TokenType.RCurly, TokenType.EOF))
         {
-            if(Peek().Is(TokenType.Let)) { block.Lines.Add(ParseLet()); }
-            else if(Peek().CanStartExpression()) { block.Lines.Add(ParseExpression()); }
+            if(Peek().CanStartExpression()) { block.Lines.Add(ParseExpression()); }
+            else if(Peek().Is(TokenType.Let)) { block.Lines.Add(ParseLet()); }
+            else if(Peek().Is(TokenType.Mut)) { block.Lines.Add(ParseMut()); }
+            else if(Peek().Is(TokenType.If)) { block.Lines.Add(ParseIf()); continue; }
+            else if(Peek().Is(TokenType.Else)) { block.Lines.Add(ParseElse()); continue; }
+            else if(Peek().Is(TokenType.While)) { block.Lines.Add(ParseWhile()); continue; }
+            else if(Peek().Is(TokenType.Do)) { block.Lines.Add(ParseDoWhile()); continue; }
             else
             {
                 Error(ParseError.UnexpectedLineBegin(Peek()), Peek());
@@ -369,6 +377,190 @@ End:
         }
 
         return block;
+    }
+
+    private WhileNode ParseDoWhile()
+    {
+        Consume();
+
+        if(Peek().Is(TokenType.While))
+        {
+            var whileNode = ParseWhile();
+            whileNode.Do = true;
+            return whileNode;
+        }
+
+        Error(ParseError.UnexpectedToken(Peek(), TokenType.While), Peek());
+        var recovery = ConsumeUntilRaw(TokenType.RCurly, TokenType.Semi);
+        return new WhileNode();
+    }
+
+    private WhileNode ParseWhile()
+    {
+        WhileNode whileNode = new();
+        whileNode.Do = false;
+        Consume();
+
+Condition:
+
+        if(Peek().CanStartExpression())
+        {
+            whileNode.Condition = ParseExpression();
+            goto Block;
+        }
+        else
+        {
+            Error(ParseError.ExpectedExpression(Peek()), Peek());
+            while(!Peek().CanStartExpression() && 
+                  Peek().IsNot(TokenType.LCurly, TokenType.EOF, TokenType.Semi))
+                Consume();
+            if(Peek().Is(TokenType.LCurly)) goto Block;
+            if(Peek().CanStartExpression()) goto Condition;
+            return whileNode;
+        }
+
+Block:
+
+        if(Peek().Is(TokenType.LCurly))
+        {
+            whileNode.Block = ParseBlock();
+            return whileNode;
+        }
+        else
+        {
+            Error(ParseError.UnexpectedToken(Peek(), TokenType.LCurly), Peek());
+            var recovery = ConsumeUntil(TokenType.LCurly, TokenType.Semi);
+            if(Peek().Is(TokenType.LCurly)) goto Block;
+            return whileNode;
+        }
+
+        return whileNode;
+    }
+
+    private IfNode ParseIf()
+    {
+        IfNode ifNode = new();
+        Consume();
+
+Condition:
+
+        if(Peek().CanStartExpression())
+        {
+            ifNode.Condition = ParseExpression();
+            goto Block;
+        }
+        else
+        {
+            Error(ParseError.ExpectedExpression(Peek()), Peek());
+            while(!Peek().CanStartExpression() && 
+                  Peek().IsNot(TokenType.LCurly, TokenType.EOF, TokenType.Semi))
+                Consume();
+            if(Peek().Is(TokenType.LCurly)) goto Block;
+            if(Peek().CanStartExpression()) goto Condition;
+            return ifNode;
+        }
+
+Block:
+
+        if(Peek().Is(TokenType.LCurly))
+        {
+            ifNode.Block = ParseBlock();
+            return ifNode;
+        }
+        else
+        {
+            Error(ParseError.UnexpectedToken(Peek(), TokenType.LCurly), Peek());
+            var recovery = ConsumeUntil(TokenType.LCurly, TokenType.Semi);
+            if(Peek().Is(TokenType.LCurly)) goto Block;
+            return ifNode;
+        }
+
+        return ifNode;
+    }
+
+    public IBlockLineNode ParseElse()
+    {
+        Consume();
+
+Begin:
+
+        if(Peek().Is(TokenType.If)) 
+        { 
+            ElseIfNode elifNode = new(); 
+            var result = ParseIf();
+            elifNode.Condition = result.Condition;
+            elifNode.Block = result.Block;
+            return elifNode;
+        }
+        else if(Peek().Is(TokenType.LCurly))
+        {
+            ElseNode elseNode = new();
+            elseNode.Block = ParseBlock();
+            return elseNode;
+        }
+        else
+        {
+            Error(ParseError.UnexpectedToken(Peek(), TokenType.If, TokenType.LCurly), Peek());
+            var recovery = ConsumeUntil(TokenType.If, TokenType.LCurly);
+            if(recovery.Is(TokenType.If, TokenType.LCurly)) goto Begin;
+            return new ElseNode();
+        }
+    }
+
+    private MutationNode ParseMut()
+    {
+        MutationNode mut = new();
+        Consume();
+
+Name:
+
+        if(Peek().Is(TokenType.Id))
+        {
+            mut.Name = Consume().Value;
+            goto Operator;
+        }
+        else
+        {
+            Error(ParseError.UnexpectedToken(Peek(), TokenType.Id), Peek());
+            var recovery = ConsumeUntil(TokenType.Id, TokenType.Semi, TokenType.RCurly);
+            if(recovery.Is(TokenType.Id)) goto Name;
+            return mut;
+        }
+
+Operator:
+
+        if(Peek().IsMutOperator())
+        {
+            mut.Operator = Consume();
+            goto Expression;
+        }
+        else
+        {
+            Error(ParseError.ExpectedMutableOperator, Peek());
+            while(Peek().IsNot(TokenType.EOF, TokenType.RCurly, TokenType.Semi) &&
+                  !Peek().IsMutOperator())
+                Consume();
+            if(Peek().IsMutOperator()) goto Operator;
+            return mut;
+        }
+
+Expression:
+
+        if(Peek().CanStartExpression())
+        {
+            mut.Expression = ParseExpression();
+        }
+        else
+        {
+            Error(ParseError.ExpectedExpression(Peek()), Peek());
+            while(Peek().IsNot(TokenType.EOF, TokenType.RCurly, TokenType.Semi) &&
+                  !Peek().CanStartExpression())
+                Consume();
+            if(Peek().CanStartExpression()) goto Expression;
+            return mut;
+        }
+
+        return mut;
     }
 
     private LetDefinitionNode ParseLet()
