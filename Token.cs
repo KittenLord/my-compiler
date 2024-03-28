@@ -8,19 +8,19 @@ public enum TokenType
     Invalid, // an invalid token
     Let, // let
     Mut, // mut
-    Free, // free
+        Free, // free
     Fn, // fn
     If, // if
     Else, // else
-    For, // for
-    From, // from
-    To, // to
+        For, // for
+        From, // from
+        To, // to
     While, // while
     Do, // do while
     True, // true
     False, // false
     Type, // type
-    Return, // return
+        Return, // return
     Id, // identifier, i.e. variable/function name, type
 
     Number, // 12312, 0x0000

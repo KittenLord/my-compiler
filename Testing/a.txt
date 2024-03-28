@@ -1,8 +1,5 @@
-fn test() {
-    let int* array = {};
-    let i = 0;
-    while i < array.length {
-        print(array[i]);
-        mut i += 1;
-    }
+let global = 5
+
+fn main(string* args) -> int {
+    {{{a-b}.c}.b}.length
 }

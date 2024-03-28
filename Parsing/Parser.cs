@@ -14,12 +14,19 @@ public static class ParseError
     public const string MissingFunctionName 
         = "Function definition is missing a name";
 
+    public const string MissingTypeName 
+        = "Type definition is missing a name";
+
     public const string MissingFunctionArguments
         = "Function definition is missing its arguments";
 
     public const string InvalidFunctionDeclaration
         = @"Function declaration is invalid. Declare a function like this:
     fn NAME(TYPE1 ARG1, TYPE2 ARG2, ...) -> RETURN_TYPE { ... }";
+
+    public const string InvalidTypeDeclaration
+        = @"Type declaration is invalid. Declare a type like this:
+    type NAME { TYPE1 MEMBER1; TYPE2 MEMBER2; ... }";
 
     public const string InvalidVariableDeclaration
         = @"Variable declaration is invalid. Declare a variable like this:
@@ -146,13 +153,120 @@ public class Parser
                 tree.Functions.Add(ParseFunctionDefinition());
                 continue;
             }
+            if(Peek().Is(TokenType.Type))
+            {
+                tree.Types.Add(ParseTypeDefinition());
+                continue;
+            }
+            if(Peek().Is(TokenType.Let))
+            {
+                tree.Variables.Add(ParseLet());
 
-            // Shit
+                if(Peek().Is(TokenType.Semi)) { Consume(); continue; }
+                Error(ParseError.UnexpectedToken(Peek(), TokenType.Semi), Peek());
+                var recovery = ConsumeUntil(TokenType.Semi, TokenType.Type, TokenType.Fn);
+                if(recovery.Is(TokenType.Semi)) Consume();
+                continue;
+            }
+
             Error(ParseError.UnexpectedToken(Peek(), TokenType.Fn, TokenType.Type), Peek());
-            Consume();
+            ConsumeUntil(TokenType.Fn, TokenType.Type);
         }
 
         return tree;
+    }
+
+    private TypeDefinitionNode ParseTypeDefinition()
+    {
+        TypeDefinitionNode type = new();
+        var delimiter = Consume();
+
+Name:
+
+        if(Peek().Is(TokenType.Id))
+        {
+            type.Name = Consume().Value;
+            goto Members;
+        }
+        else
+        {
+            if(Peek().Is(TokenType.LCurly))
+            {
+                Error(ParseError.MissingTypeName, Peek());
+                goto Members;
+            }
+            else
+            {
+                Error(ParseError.InvalidTypeDeclaration, Peek());
+                var recovery = ConsumeUntil(TokenType.Id, TokenType.LCurly, TokenType.Type, TokenType.Fn);
+                if(recovery.Is(TokenType.Id)) goto Name;
+                if(recovery.Is(TokenType.LCurly)) goto Members;
+                return type;
+            }
+        }
+
+Members:
+
+        Consume();
+        while(Peek().IsNot(TokenType.EOF, TokenType.RCurly))
+        {
+            var member = new VariableNode();
+
+Type:
+
+            if(Peek().Is(TokenType.Id))
+            {
+                member.Type = ParseType();
+                goto MName;
+            }
+            else
+            {
+                Error(ParseError.ExpectedType(Peek()), Peek());
+                var recovery = ConsumeUntil(TokenType.Id, TokenType.Semi, TokenType.RCurly);
+                if(recovery.Is(TokenType.Id)) goto Type;
+                if(recovery.Is(TokenType.Semi)) { Consume(); continue; };
+                return type;
+            }
+
+MName:
+
+            if(Peek().Is(TokenType.Id))
+            {
+                member.Name = Consume().Value;
+                goto Semi;
+            }
+            else
+            {
+                Error(ParseError.UnexpectedToken(Peek(), TokenType.Id), Peek());
+                var recovery = ConsumeUntil(TokenType.Id, TokenType.Semi, TokenType.RCurly);
+                if(recovery.Is(TokenType.Id)) goto MName;
+                if(recovery.Is(TokenType.Semi)) { Consume(); continue; }
+                return type;
+            }
+
+Semi:
+
+            type.Members.Add(member);
+            if(Peek().Is(TokenType.Semi))
+            {
+                Consume();
+            }
+            else
+            {
+                Error(ParseError.MissingSemicolon, Peek());
+                var recovery = ConsumeUntil(TokenType.Id, TokenType.RCurly);
+                if(recovery.Is(TokenType.Semi)) { Consume(); continue; }
+                return type;
+            }
+        }
+
+        if(Peek().Is(TokenType.RCurly)) Consume();
+        else
+        {
+            Error(ParseError.UnclosedDelimiter(delimiter), Peek());
+        }
+
+        return type;
     }
 
     private FunctionDefinitionNode ParseFunctionDefinition()
@@ -359,7 +473,7 @@ End:
             else if(Peek().Is(TokenType.Do)) { block.Lines.Add(ParseDoWhile()); continue; }
             else
             {
-                Error(ParseError.UnexpectedLineBegin(Peek()), Peek());
+                Error(ParseError.UnexpectedToken(Peek(), TokenType.Let, TokenType.Mut, TokenType.If, TokenType.Else, TokenType.While, TokenType.Do, TokenType.Id, TokenType.LCurly), Peek());
                 while(!Peek().CanStartLine() && Peek().IsNot(TokenType.EOF, TokenType.Semi, TokenType.RCurly))
                     Consume();
             }
@@ -398,6 +512,8 @@ End:
     private WhileNode ParseWhile()
     {
         WhileNode whileNode = new();
+        whileNode.Block = new BlockNode();
+        whileNode.Condition = new BlockNode();
         whileNode.Do = false;
         Consume();
 
@@ -681,6 +797,19 @@ Expression:
             { leaf = new LiteralExpressionNode(new BoolLiteralNode(Consume().Is(TokenType.True))); }
         else if(Peek().Is(TokenType.Id))
             { leaf = new LiteralExpressionNode(new IdLiteralNode(Consume().Value)); }
+        else if(Peek().Is(TokenType.Minus, TokenType.Not))
+        {
+            var op = Consume();
+            if(Peek().CanStartExpression()) { leaf = new UnaryOperatorExpressionNode(op, ParseLeaf()); }
+            else
+            {
+                Error(ParseError.ExpectedExpression(Peek()), Peek());
+                while(!Peek().CanStartExpression() && Peek().IsNot(TokenType.RCurly, TokenType.Semi, TokenType.EOF))
+                    Consume();
+                if(Peek().CanStartExpression()) { leaf = new UnaryOperatorExpressionNode(op, ParseLeaf()); }
+                return new LiteralExpressionNode(new BoolLiteralNode(false));
+            }
+        }
         // NOTE: If any exceptions fire, the compiler needs to be fixed
         else throw new Exception(); 
 

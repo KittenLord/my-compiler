@@ -7,13 +7,17 @@ namespace MyCompiler.Parsing;
 public struct ParseTree
 {
     public List<FunctionDefinitionNode> Functions;
+    public List<TypeDefinitionNode> Types;
+    public List<LetDefinitionNode> Variables;
 
     public ParseTree()
     {
         Functions = new();
+        Types = new();
+        Variables = new();
     }
 
-    public override string ToString() => $"Program{Functions.ToLines().Indent()}";
+    public override string ToString() => $"Program{Functions.ToLines().Indent()}{Types.ToLines().Indent()}{Variables.ToLines().Indent()}";
 }
 
 public struct FunctionDefinitionNode
@@ -55,4 +59,17 @@ public struct TupleNode
     }
 
     public override string ToString() => $"Tuple{Elements.ToLines().Indent()}";
+}
+
+public struct TypeDefinitionNode
+{
+    public string? Name;
+    public List<VariableNode> Members;
+
+    public TypeDefinitionNode()
+    {
+        Members = new();
+    }
+
+    public override string ToString() => $"Type{Members.ToLines().Indent()}";
 }

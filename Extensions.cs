@@ -25,7 +25,8 @@ public static class Extensions
     {
         return token.Is(TokenType.Id, TokenType.Number, TokenType.String, 
                         TokenType.True, TokenType.False,
-                        TokenType.LCurly);
+                        TokenType.LCurly,
+                        TokenType.Not, TokenType.Minus);
     }
 
     public static bool CanStartLine(this Token token)

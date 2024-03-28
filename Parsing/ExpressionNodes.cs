@@ -23,6 +23,20 @@ public struct OperatorExpressionNode : IExpressionNode
     public override string ToString() => $"{Operator.Type}\n{Left.Indent()}\n{Right.Indent()}";
 }
 
+public struct UnaryOperatorExpressionNode : IAccessible
+{
+    public Token Operator;
+    public IExpressionNode Base;
+
+    public UnaryOperatorExpressionNode(Token op, IExpressionNode b)
+    {
+        Operator = op;
+        Base = b;
+    }
+
+    public override string ToString() => $"{Operator.Type}\n{Base.Indent()}";
+}
+
 public struct LiteralExpressionNode : IAccessible
 {
     public ILiteralNode Literal;
@@ -46,7 +60,7 @@ public struct ArrayAccessorNode : IAccessible
         Index = index;
     }
 
-    public override string ToString() => $"{Base} *\n{Index.Indent()}";
+    public override string ToString() => $"{Base}\n*\n{Index.Indent()}";
 }
 
 public struct FuncAccessorNode : IAccessible
@@ -60,7 +74,7 @@ public struct FuncAccessorNode : IAccessible
         Arguments = new();
     }
 
-    public override string ToString() => $"{Base} ${Arguments.ToLines().Indent()}";
+    public override string ToString() => $"{Base}\n${Arguments.ToLines().Indent()}";
 }
 
 public struct PointerAccessorNode : IAccessible
@@ -72,7 +86,7 @@ public struct PointerAccessorNode : IAccessible
         Base = b;
     }
 
-    public override string ToString() => $"{Base} @";
+    public override string ToString() => $"{Base}\n@";
 }
 
 public struct MemberAccessorNode : IAccessible
@@ -86,5 +100,5 @@ public struct MemberAccessorNode : IAccessible
         Member = member;
     }
 
-    public override string ToString() => $"{Base} -> {Member}";
+    public override string ToString() => $"{Base}\n. {Member}";
 }
