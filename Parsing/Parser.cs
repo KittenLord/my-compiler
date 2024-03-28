@@ -893,6 +893,7 @@ Expression:
                                             TokenType.Comma, TokenType.RParen))
                             Consume();
                         // FIXME: If I will introduce unit type, put it here
+                        // NOTE: I will not introduce unit type, thats too hard lol
                         if(Peek().Is(TokenType.Comma)) 
                             { func.Arguments.Add(new LiteralExpressionNode(new BoolLiteralNode(true))); Consume(); continue; }
                         if(Peek().Is(TokenType.RParen)) 

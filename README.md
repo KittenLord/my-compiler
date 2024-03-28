@@ -14,7 +14,7 @@ Here is the current planned features list:
 
 TODO:
 - [ ] Implement all remaining keywords (return, free, for/from/to)
-- [ ] Figure out pre-existing functions/constants (new, NULL, io)
+- [ ] Figure out pre-existing functions/constants (new, NULL, NONE, io)
 - [ ] Start working on static analysis
 - [x] Rewrite the single literal parser (so that chained array dereferences/function indexation is possible)
 - [x] Add pointers (@)
