@@ -164,13 +164,13 @@ public class Parser
 
                 if(Peek().Is(TokenType.Semi)) { Consume(); continue; }
                 Error(ParseError.UnexpectedToken(Peek(), TokenType.Semi), Peek());
-                var recovery = ConsumeUntil(TokenType.Semi, TokenType.Type, TokenType.Fn);
+                var recovery = ConsumeUntil(TokenType.Semi, TokenType.Type, TokenType.Fn, TokenType.Let);
                 if(recovery.Is(TokenType.Semi)) Consume();
                 continue;
             }
 
-            Error(ParseError.UnexpectedToken(Peek(), TokenType.Fn, TokenType.Type), Peek());
-            ConsumeUntil(TokenType.Fn, TokenType.Type);
+            Error(ParseError.UnexpectedToken(Peek(), TokenType.Fn, TokenType.Type, TokenType.Let), Peek());
+            ConsumeUntil(TokenType.Fn, TokenType.Type, TokenType.Let);
         }
 
         return tree;

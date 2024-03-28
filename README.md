@@ -13,5 +13,8 @@ Here is the current planned features list:
 - No type stuff besides primitives, arrays and structs (maybe unions as well?)
 
 TODO:
-- [ ] Rewrite the single literal parser (so that chained array dereferences/function indexation is possible)
-- [ ] Add pointers (@)
+- [ ] Implement all remaining keywords (return, free, for/from/to)
+- [ ] Figure out pre-existing functions/constants (new, NULL, io)
+- [ ] Start working on static analysis
+- [x] Rewrite the single literal parser (so that chained array dereferences/function indexation is possible)
+- [x] Add pointers (@)
