@@ -179,7 +179,7 @@ public class Parser
     private TypeDefinitionNode ParseTypeDefinition()
     {
         TypeDefinitionNode type = new();
-        var delimiter = Consume();
+        type.Position = Consume().Position;
 
 Name:
 
@@ -207,7 +207,7 @@ Name:
 
 Members:
 
-        Consume();
+        var delimiter = Consume();
         while(Peek().IsNot(TokenType.EOF, TokenType.RCurly))
         {
             var member = new VariableNode();
@@ -550,7 +550,7 @@ Block:
             return whileNode;
         }
 
-        return whileNode;
+        // return whileNode;
     }
 
     private IfNode ParseIf()
@@ -591,7 +591,7 @@ Block:
             return ifNode;
         }
 
-        return ifNode;
+        // return ifNode;
     }
 
     public IBlockLineNode ParseElse()
@@ -630,14 +630,14 @@ Begin:
 
 Name:
 
-        if(Peek().Is(TokenType.Id))
+        if(Peek().CanStartExpression())
         {
-            mut.Name = Consume().Value;
+            mut.Access = ParseLeaf();
             goto Operator;
         }
         else
         {
-            Error(ParseError.UnexpectedToken(Peek(), TokenType.Id), Peek());
+            Error(ParseError.ExpectedExpression(Peek()), Peek());
             var recovery = ConsumeUntil(TokenType.Id, TokenType.Semi, TokenType.RCurly);
             if(recovery.Is(TokenType.Id)) goto Name;
             return mut;
@@ -682,7 +682,7 @@ Expression:
     private LetDefinitionNode ParseLet()
     {
         LetDefinitionNode let = new();
-        Consume();
+        let.Position = Consume().Position;
 
 Type:
 
@@ -712,8 +712,8 @@ Name:
         {
             if(let.Type is TypeNode type)
             {
-                let.Name = type.Name;
-                let.Type = new TypeNoneNode();
+                let.Name = type.Type.Name;
+                let.Type = new TypeAutoNode();
                 goto Assign;
             }
             else
@@ -764,7 +764,7 @@ Expression:
     private IExpressionNode ParseExpression(int precedence = int.MinValue)
     {
         IExpressionNode expression;
-        var lhs = ParseLeaf();
+        var lhs = ParseLeaf() as IExpressionNode;
 
         while(true)
         {
@@ -783,18 +783,18 @@ Expression:
         else return new OperatorExpressionNode(Consume(), expr, ParseExpression(p));
     }
 
-    private IExpressionNode ParseLeaf()
+    private IAccessible ParseLeaf()
     {
         IAccessible leaf;
 
         if(Peek().Is(TokenType.LCurly)) 
             { leaf = ParseBlock(); }
         else if(Peek().Is(TokenType.Number)) 
-            { leaf = new LiteralExpressionNode(new NumberLiteralNode(Consume().Value)); }
+            { leaf = new LiteralExpressionNode(new ValueLiteralNode(Consume().Value, new TypeNode(MyCompiler.Analysis.BIType.Int))); }
         else if(Peek().Is(TokenType.String))
-            { leaf = new LiteralExpressionNode(new StringLiteralValue(Consume().Value)); }
+            { leaf = new LiteralExpressionNode(new ValueLiteralNode(Consume().Value, new TypeNode(MyCompiler.Analysis.BIType.String))); }
         else if(Peek().Is(TokenType.True, TokenType.False))
-            { leaf = new LiteralExpressionNode(new BoolLiteralNode(Consume().Is(TokenType.True))); }
+            { leaf = new LiteralExpressionNode(new ValueLiteralNode(Consume().Value, new TypeNode(MyCompiler.Analysis.BIType.Bool))); }
         else if(Peek().Is(TokenType.Id))
             { leaf = new LiteralExpressionNode(new IdLiteralNode(Consume().Value)); }
         else if(Peek().Is(TokenType.Minus, TokenType.Not))
@@ -807,7 +807,7 @@ Expression:
                 while(!Peek().CanStartExpression() && Peek().IsNot(TokenType.RCurly, TokenType.Semi, TokenType.EOF))
                     Consume();
                 if(Peek().CanStartExpression()) { leaf = new UnaryOperatorExpressionNode(op, ParseLeaf()); }
-                return new LiteralExpressionNode(new BoolLiteralNode(false));
+                return new LiteralExpressionNode(new ValueLiteralNode("false", new TypeNode(MyCompiler.Analysis.BIType.Bool)));
             }
         }
         // NOTE: If any exceptions fire, the compiler needs to be fixed
@@ -895,9 +895,9 @@ Expression:
                         // FIXME: If I will introduce unit type, put it here
                         // NOTE: I will not introduce unit type, thats too hard lol
                         if(Peek().Is(TokenType.Comma)) 
-                            { func.Arguments.Add(new LiteralExpressionNode(new BoolLiteralNode(true))); Consume(); continue; }
+                            { func.Arguments.Add(new LiteralExpressionNode(new ValueLiteralNode("", new TypeNoneNode()))); Consume(); continue; }
                         if(Peek().Is(TokenType.RParen)) 
-                            { func.Arguments.Add(new LiteralExpressionNode(new BoolLiteralNode(true))); continue; }
+                            { func.Arguments.Add(new LiteralExpressionNode(new ValueLiteralNode("", new TypeNoneNode()))); continue; }
                     }
                 }
 

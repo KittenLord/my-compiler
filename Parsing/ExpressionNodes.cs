@@ -7,7 +7,7 @@ namespace MyCompiler.Parsing;
 public interface IExpressionNode {}
 public interface IAccessible : IExpressionNode {}
 
-public struct OperatorExpressionNode : IExpressionNode
+public class OperatorExpressionNode : IExpressionNode
 {
     public Token Operator;
     public IExpressionNode Left;
@@ -23,7 +23,7 @@ public struct OperatorExpressionNode : IExpressionNode
     public override string ToString() => $"{Operator.Type}\n{Left.Indent()}\n{Right.Indent()}";
 }
 
-public struct UnaryOperatorExpressionNode : IAccessible
+public class UnaryOperatorExpressionNode : IAccessible
 {
     public Token Operator;
     public IExpressionNode Base;
@@ -37,7 +37,7 @@ public struct UnaryOperatorExpressionNode : IAccessible
     public override string ToString() => $"{Operator.Type}\n{Base.Indent()}";
 }
 
-public struct LiteralExpressionNode : IAccessible
+public class LiteralExpressionNode : IAccessible
 {
     public ILiteralNode Literal;
 
@@ -49,7 +49,7 @@ public struct LiteralExpressionNode : IAccessible
     public override string ToString() => $"{Literal}";
 }
 
-public struct ArrayAccessorNode : IAccessible
+public class ArrayAccessorNode : IAccessible
 {
     public IAccessible Base;
     public IExpressionNode Index;
@@ -63,7 +63,7 @@ public struct ArrayAccessorNode : IAccessible
     public override string ToString() => $"{Base}\n*\n{Index.Indent()}";
 }
 
-public struct FuncAccessorNode : IAccessible
+public class FuncAccessorNode : IAccessible
 {
     public IAccessible Base;
     public List<IExpressionNode> Arguments;
@@ -77,7 +77,7 @@ public struct FuncAccessorNode : IAccessible
     public override string ToString() => $"{Base}\n${Arguments.ToLines().Indent()}";
 }
 
-public struct PointerAccessorNode : IAccessible
+public class PointerAccessorNode : IAccessible
 {
     public IAccessible Base;
 
@@ -89,7 +89,7 @@ public struct PointerAccessorNode : IAccessible
     public override string ToString() => $"{Base}\n@";
 }
 
-public struct MemberAccessorNode : IAccessible
+public class MemberAccessorNode : IAccessible
 {
     public IAccessible Base;
     public string Member;

@@ -4,7 +4,8 @@ using System.Linq;
 
 namespace MyCompiler.Parsing;
 
-public struct ParseTree
+// Technically it is an AST, but whatever
+public class ParseTree
 {
     public List<FunctionDefinitionNode> Functions;
     public List<TypeDefinitionNode> Types;
@@ -20,7 +21,7 @@ public struct ParseTree
     public override string ToString() => $"Program{Functions.ToLines().Indent()}{Types.ToLines().Indent()}{Variables.ToLines().Indent()}";
 }
 
-public struct FunctionDefinitionNode
+public class FunctionDefinitionNode
 {
     public Position Position;
 
@@ -41,7 +42,7 @@ public struct FunctionDefinitionNode
         => $"Function\n{Name?.Indent() ?? ""}{Arguments.ToLines().Indent()}\n{("-> " + ReturnType.ToString()).Indent()}\n{Block.Indent()}";
 }
 
-public struct VariableNode
+public class VariableNode
 {
     public ITypeNode? Type;
     public string? Name;
@@ -49,7 +50,7 @@ public struct VariableNode
     public override string ToString() => $"{Name} : {Type}";
 }
 
-public struct TupleNode
+public class TupleNode
 {
     public List<VariableNode> Elements;
 
@@ -61,8 +62,10 @@ public struct TupleNode
     public override string ToString() => $"Tuple{Elements.ToLines().Indent()}";
 }
 
-public struct TypeDefinitionNode
+public class TypeDefinitionNode
 {
+    public Position Position;
+
     public string? Name;
     public List<VariableNode> Members;
 

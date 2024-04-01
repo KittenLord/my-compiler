@@ -1,7 +1,6 @@
-type x {
-    int a;
-    int b;
-    int c;
+fn test() {
+    let a = 5;
+    mut {a} += 3;
 }
 
-let a = 5;
+let int aboba = 5;

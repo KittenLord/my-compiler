@@ -1,24 +1,42 @@
+using MyCompiler.Analysis;
+
 namespace MyCompiler.Parsing;
 
 public interface ITypeNode {}
-public struct TypeNoneNode : ITypeNode 
+public class TypeNoneNode : ITypeNode 
 {
     public override string ToString() => "NONE";
 }
 
-public struct TypeNode : ITypeNode
+public class TypeAutoNode : ITypeNode
 {
-    public string Name;
+    public override string ToString() => "AUTO";
+}
+
+public class TypeNode : ITypeNode
+{
+    public TypeInfo Type;
+
+    public TypeNode(TypeInfo type)
+    {
+        Type = type;
+    }
 
     public TypeNode(string name)
     {
-        Name = name;
+        Type = new TypeInfo(name);
     }
 
-    public override string ToString() => Name;
+    public override string ToString() => Type.Name;
+
+    public override bool Equals(object? obj)
+    {
+        if(obj is not TypeNode type) return false;
+        return Type.Name == type.Type.Name;
+    }
 }
 
-public struct TypeArrayNode : ITypeNode
+public class TypeArrayNode : ITypeNode
 {
     public ITypeNode Base;
 
@@ -28,9 +46,15 @@ public struct TypeArrayNode : ITypeNode
     }
 
     public override string ToString() => Base.ToString() + "[]";
+
+    public override bool Equals(object? obj)
+    {
+        if(obj is not TypeArrayNode type) return false;
+        return Base.Equals(type.Base);
+    }
 }
 
-public struct TypePointerNode : ITypeNode
+public class TypePointerNode : ITypeNode
 {
     public ITypeNode Base;
 
@@ -40,4 +64,10 @@ public struct TypePointerNode : ITypeNode
     }
 
     public override string ToString() => Base.ToString() + "@";
+
+    public override bool Equals(object? obj)
+    {
+        if(obj is not TypePointerNode type) return false;
+        return Base.Equals(type.Base);
+    }
 }

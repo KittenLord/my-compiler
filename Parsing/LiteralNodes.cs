@@ -6,7 +6,7 @@ namespace MyCompiler.Parsing;
 
 public interface ILiteralNode {}
 
-public struct IdLiteralNode : ILiteralNode
+public class IdLiteralNode : ILiteralNode
 {
     public string Id;
 
@@ -18,38 +18,16 @@ public struct IdLiteralNode : ILiteralNode
     public override string ToString() => $"{Id} : id";
 }
 
-public struct NumberLiteralNode : ILiteralNode
+public class ValueLiteralNode : ILiteralNode
 {
+    public ITypeNode Type;
     public string Value;
 
-    public NumberLiteralNode(string value)
+    public ValueLiteralNode(string value, ITypeNode type)
     {
         Value = value;
+        Type = type;
     }
 
-    public override string ToString() => $"{Value} : number";
-}
-
-public struct BoolLiteralNode : ILiteralNode
-{
-    public bool Value;
-
-    public BoolLiteralNode(bool value)
-    {
-        Value = value;
-    }
-
-    public override string ToString() => $"{Value} : bool";
-}
-
-public struct StringLiteralValue : ILiteralNode
-{
-    public string Value;
-
-    public StringLiteralValue(string value)
-    {
-        Value = value;
-    }
-
-    public override string ToString() => $"\"{Value}\" : string";
+    public override string ToString() => $"{Value} : {Type}";
 }

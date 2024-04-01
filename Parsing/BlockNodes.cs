@@ -4,24 +4,29 @@ using System.Linq;
 
 namespace MyCompiler.Parsing;
 
-public struct BlockNode : IAccessible
+public class BlockNode : IAccessible
 {
     public List<IExpressionNode> Lines;
+
     public bool ReturnLast;
+    public ITypeNode ReturnType;
 
     public BlockNode()
     {
         Lines = new();
         ReturnLast = false;
+        ReturnType = new TypeAutoNode();
     }
 
-    public override string ToString() => $"Block{(ReturnLast ? " ->" : "")}{Lines.ToLines().Indent()}";
+    public override string ToString() => $"Block\n{"-> " + ReturnType.Indent()}{Lines.ToLines().Indent()}";
 }
 
 public interface IBlockLineNode : IExpressionNode {}
 
-public struct LetDefinitionNode : IBlockLineNode
+public class LetDefinitionNode : IBlockLineNode
 {
+    public Position Position;
+
     public ITypeNode Type;
     public string? Name;
     public IExpressionNode Expression;
@@ -29,16 +34,16 @@ public struct LetDefinitionNode : IBlockLineNode
     public override string ToString() => $"Let\n{Name?.Indent() ?? ""} : {Type}\n{Expression.Indent()}";
 }
 
-public struct MutationNode : IBlockLineNode
+public class MutationNode : IBlockLineNode
 {
-    public string Name;
+    public IAccessible Access;
     public Token Operator;
     public IExpressionNode Expression;
 
-    public override string ToString() => $"Mut\n{Name?.Indent() ?? ""} {Operator}\n{Expression.Indent()}";
+    public override string ToString() => $"Mut\n{Access.Indent() ?? ""} {Operator}\n{Expression.Indent()}";
 }
 
-public struct IfNode : IBlockLineNode
+public class IfNode : IBlockLineNode
 {
     public IExpressionNode Condition;
     public BlockNode Block;
@@ -46,14 +51,14 @@ public struct IfNode : IBlockLineNode
     public override string ToString() => $"If\n{Condition.Indent()}\n{Block.Indent()}";
 }
 
-public struct ElseNode : IBlockLineNode
+public class ElseNode : IBlockLineNode
 {
     public BlockNode Block;
 
     public override string ToString() => $"Else\n{Block.Indent()}";
 }
 
-public struct ElseIfNode : IBlockLineNode
+public class ElseIfNode : IBlockLineNode
 {
     public IExpressionNode Condition;
     public BlockNode Block;
@@ -61,7 +66,7 @@ public struct ElseIfNode : IBlockLineNode
     public override string ToString() => $"Else If\n{Condition.Indent()}\n{Block.Indent()}";
 }
 
-public struct WhileNode : IBlockLineNode
+public class WhileNode : IBlockLineNode
 {
     public bool Do;
     public IExpressionNode Condition;
