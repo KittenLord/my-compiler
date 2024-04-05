@@ -9,7 +9,7 @@ public class Program
     {
         var path = "Testing/a.txt";
         var code = File.ReadAllText(path);
-        code = Prelude.Contents + "\n" + code;
+        code = Prelude.Content + "\n" + code;
 
         RunTokenizer(code);
 
@@ -18,6 +18,17 @@ public class Program
         var tokenizer = new Tokenizer(code);
         var parser = new Parser(tokenizer);
         var tree = parser.Parse();
+        var analyzer = new Analyzer(tree);
+        analyzer.Analyze();
+
+
+
+
+        Console.WriteLine(tree);
+        foreach(var type in analyzer.Types) { Console.WriteLine(type); }
+
+
+
 
         Console.ForegroundColor = ConsoleColor.Red;
         foreach(var error in parser.Errors)
@@ -26,17 +37,11 @@ public class Program
             Console.WriteLine();
         }
 
-        var analyzer = new Analyzer(tree);
-        analyzer.Analyze();
-
         foreach(var error in analyzer.Errors)
         {
             Console.WriteLine(error);
             Console.WriteLine();
         }
-
-        Console.ForegroundColor = ConsoleColor.White;
-        Console.WriteLine(tree);
     }
 
     public static void RunTokenizer(string code)
@@ -46,7 +51,7 @@ public class Program
         do
         {
             token = tokenizer.Consume();
-            Console.WriteLine(token.ToString());
+            Console.WriteLine(token.ToString() + $" {token.Position}");
         }
         while(token.Type != TokenType.EOF);
     }

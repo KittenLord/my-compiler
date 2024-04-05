@@ -1,6 +1,14 @@
-fn test() {
-    let a = 5;
-    mut {a} += 3;
+asd
+type aboba {
+    int a;
+    int b;
 }
 
-let int aboba = 5;
+type test {
+    int a;
+    int b;
+    abobad c;
+    aboba d;
+}
+
+type empty {}

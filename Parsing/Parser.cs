@@ -216,6 +216,8 @@ Type:
 
             if(Peek().Is(TokenType.Id))
             {
+                member.Position = Peek().Position;
+                System.Console.WriteLine($"{member.Position}");
                 member.Type = ParseType();
                 goto MName;
             }
@@ -445,12 +447,12 @@ End:
 
     private ITypeNode ParseType()
     {
-        ITypeNode type = new TypeNode(Consume().Value);
+        TypeNode type = new TypeNode(Consume().Value);
 
         while(Peek(out var token).Is(TokenType.Mul, TokenType.Pointer))
         {
-            if(token.Is(TokenType.Mul)) type = new TypeArrayNode(type);
-            if(token.Is(TokenType.Pointer)) type = new TypePointerNode(type);
+            if(token.Is(TokenType.Mul)) type.Mods.Enqueue(TypeMod.Array);
+            if(token.Is(TokenType.Pointer)) type.Mods.Enqueue(TypeMod.Pointer);
             Consume();
         }
 

@@ -109,7 +109,7 @@ public struct Position
     public int Char;
 
     public override string ToString()
-        => $"[ {Line} : {Char} ]";
+        => $"[ {Line - Prelude.Lines} : {Char} ]";
         
     public Position(int line, int charn)
     {

@@ -64,8 +64,4 @@ public static class Extensions
     {
         return string.Join("", l.Select(v => "\n" + v?.ToString()));
     }
-
-
-    public static TypeArrayNode Array(this ITypeNode type) => new TypeArrayNode(type);
-    public static TypePointerNode Pointer(this ITypeNode type) => new TypePointerNode(type);
 }

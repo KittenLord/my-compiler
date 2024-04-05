@@ -44,6 +44,8 @@ public class FunctionDefinitionNode
 
 public class VariableNode
 {
+    public Position Position;
+
     public ITypeNode? Type;
     public string? Name;
 

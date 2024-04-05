@@ -4,7 +4,12 @@ using System.Linq;
 
 namespace MyCompiler.Parsing;
 
-public interface IExpressionNode {}
+public interface IExpressionNode 
+{
+    public bool Contains(Func<IExpressionNode, bool> predicate);
+    public ITypeNode GetType();
+}
+
 public interface IAccessible : IExpressionNode {}
 
 public class OperatorExpressionNode : IExpressionNode
