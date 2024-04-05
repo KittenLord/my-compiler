@@ -4,14 +4,16 @@ using System.Linq;
 
 namespace MyCompiler.Parsing;
 
-public interface ILiteralNode {}
+public interface ILiteralNode { public ITypeNode Type { get; set; } }
 
 public class IdLiteralNode : ILiteralNode
 {
+    public ITypeNode Type { get; set; }
     public string Id;
 
-    public IdLiteralNode(string id)
+    public IdLiteralNode(ITypeNode type, string id)
     {
+        Type = type;
         Id = id;
     }
 
@@ -20,7 +22,7 @@ public class IdLiteralNode : ILiteralNode
 
 public class ValueLiteralNode : ILiteralNode
 {
-    public ITypeNode Type;
+    public ITypeNode Type { get; set; }
     public string Value;
 
     public ValueLiteralNode(string value, ITypeNode type)

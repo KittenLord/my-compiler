@@ -1,14 +1,15 @@
-asd
 type aboba {
     int a;
     int b;
 }
 
+let int aboba = { test() };
+
+fn test() -> string { 5 }
+
 type test {
     int a;
     int b;
-    abobad c;
-    aboba d;
 }
 
 type empty {}

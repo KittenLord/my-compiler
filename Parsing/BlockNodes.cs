@@ -19,6 +19,12 @@ public class BlockNode : IAccessible
     }
 
     public override string ToString() => $"Block\n{"-> " + ReturnType.Indent()}{Lines.ToLines().Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || Lines.Any(line => predicate(line));
+
+    public ITypeNode GetType()
+        => ReturnType;
 }
 
 public interface IBlockLineNode : IExpressionNode {}
@@ -32,6 +38,12 @@ public class LetDefinitionNode : IBlockLineNode
     public IExpressionNode Expression;
 
     public override string ToString() => $"Let\n{Name?.Indent() ?? ""} : {Type}\n{Expression.Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Expression);
+
+    public ITypeNode GetType()
+        => Type;
 }
 
 public class MutationNode : IBlockLineNode
@@ -41,6 +53,12 @@ public class MutationNode : IBlockLineNode
     public IExpressionNode Expression;
 
     public override string ToString() => $"Mut\n{Access.Indent() ?? ""} {Operator}\n{Expression.Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Expression);
+
+    public ITypeNode GetType()
+        => Access.GetType();
 }
 
 public class IfNode : IBlockLineNode
@@ -49,6 +67,12 @@ public class IfNode : IBlockLineNode
     public BlockNode Block;
 
     public override string ToString() => $"If\n{Condition.Indent()}\n{Block.Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Block) || predicate(Condition);
+
+    public ITypeNode GetType()
+        => new TypeNoneNode();
 }
 
 public class ElseNode : IBlockLineNode
@@ -56,6 +80,12 @@ public class ElseNode : IBlockLineNode
     public BlockNode Block;
 
     public override string ToString() => $"Else\n{Block.Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Block);
+
+    public ITypeNode GetType()
+        => new TypeNoneNode();
 }
 
 public class ElseIfNode : IBlockLineNode
@@ -64,6 +94,12 @@ public class ElseIfNode : IBlockLineNode
     public BlockNode Block;
 
     public override string ToString() => $"Else If\n{Condition.Indent()}\n{Block.Indent()}";
+    
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Block) || predicate(Condition);
+
+    public ITypeNode GetType()
+        => new TypeNoneNode();
 }
 
 public class WhileNode : IBlockLineNode
@@ -73,4 +109,10 @@ public class WhileNode : IBlockLineNode
     public BlockNode Block;
 
     public override string ToString() => $"While{(Do ? " Do" : "")}\n{Condition.Indent()}\n{Block.Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Block) || predicate(Condition);
+
+    public ITypeNode GetType()
+        => new TypeNoneNode();
 }

@@ -41,4 +41,11 @@ public class TypeNode : ITypeNode
         if(obj is not TypeNode type) return false;
         return Type.Name == type.Type.Name;
     }
+
+    public TypeNode Copy()
+    {
+        var t = new TypeNode(Type);
+        t.Mods = new(Mods);
+        return t;
+    }
 }

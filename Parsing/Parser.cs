@@ -798,7 +798,7 @@ Expression:
         else if(Peek().Is(TokenType.True, TokenType.False))
             { leaf = new LiteralExpressionNode(new ValueLiteralNode(Consume().Value, new TypeNode(MyCompiler.Analysis.BIType.Bool))); }
         else if(Peek().Is(TokenType.Id))
-            { leaf = new LiteralExpressionNode(new IdLiteralNode(Consume().Value)); }
+            { leaf = new LiteralExpressionNode(new IdLiteralNode(new TypeAutoNode(), Consume().Value)); }
         else if(Peek().Is(TokenType.Minus, TokenType.Not))
         {
             var op = Consume();

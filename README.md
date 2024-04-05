@@ -1,4 +1,5 @@
 A tiny compiler I'm doing for educational purposes. It is pretty much C with even less features and hence even less usable.
+I'm not realizing that I comically overscoped the set of features, even though, supposedly this language was quite simple. Will probably start a new one, *even simpler*, that I'll actually manage to implement
 
 Grammar, examples and stuff can be viewed in Refs/
 
@@ -8,7 +9,6 @@ Here is the current planned features list:
 - Block based
 - For some reason I made it look like Rust a lot
 - Compiled language (will probably use NASM)
-- No LLVM, custom IR and optimizations
 - I will indeed probably rethink this one, cuz otherwise the language isn't at all practical ~~Only stack memory allocation, because pointers are too hard (may rethink)~~
 - No type stuff besides primitives, arrays and structs (maybe unions as well?)
 

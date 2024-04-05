@@ -129,6 +129,7 @@ public class Analyzer
     }
 
     // I'm just now realizing that navigating the parsetree will be a nightmare
+    // I'm even further realizing that this whole project will be a nightmare
     public void Analyze()
     {
         CheckSameFunctionNames();

@@ -1,7 +1,15 @@
+using MyCompiler.Parsing;
+
 namespace MyCompiler.Analysis;
 
 public static class OperatorResult
 {
+    public static TypeInfo Get(Token op, ITypeNode a, ITypeNode b)
+    {
+        if(a is not TypeNode aa || b is not TypeNode bb) return new TypeInfo();
+        return Get(op, aa.Type, bb.Type);
+    }
+
     public static TypeInfo Get(Token op, TypeInfo a, TypeInfo b)
     {
         if(op.Is(TokenType.Eq, TokenType.Neq))

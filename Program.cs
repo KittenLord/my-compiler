@@ -26,6 +26,7 @@ public class Program
 
         Console.WriteLine(tree);
         foreach(var type in analyzer.Types) { Console.WriteLine(type); }
+        foreach(var global in tree.Variables) Console.WriteLine(global.GetType());
 
 
 

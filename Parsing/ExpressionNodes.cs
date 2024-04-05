@@ -26,7 +26,14 @@ public class OperatorExpressionNode : IExpressionNode
     }
 
     public override string ToString() => $"{Operator.Type}\n{Left.Indent()}\n{Right.Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Left) || predicate(Right);
+
+    public ITypeNode GetType()
+        => new TypeNode(MyCompiler.Analysis.OperatorResult.Get(Operator, Left.GetType(), Right.GetType()));
 }
+
 
 public class UnaryOperatorExpressionNode : IAccessible
 {
@@ -40,6 +47,12 @@ public class UnaryOperatorExpressionNode : IAccessible
     }
 
     public override string ToString() => $"{Operator.Type}\n{Base.Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Base);
+
+    public ITypeNode GetType()
+        => Base.GetType();
 }
 
 public class LiteralExpressionNode : IAccessible
@@ -52,6 +65,12 @@ public class LiteralExpressionNode : IAccessible
     }
 
     public override string ToString() => $"{Literal}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this);
+
+    public ITypeNode GetType()
+        => Literal.Type;
 }
 
 public class ArrayAccessorNode : IAccessible
@@ -66,6 +85,18 @@ public class ArrayAccessorNode : IAccessible
     }
 
     public override string ToString() => $"{Base}\n*\n{Index.Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Base) || predicate(Index);
+
+    public ITypeNode GetType()
+    {
+        var t = Base.GetType();
+        if(t is not TypeNode type) return t;
+        type = type.Copy();
+        type.Mods.Dequeue();
+        return type;
+    }
 }
 
 public class FuncAccessorNode : IAccessible
@@ -80,6 +111,12 @@ public class FuncAccessorNode : IAccessible
     }
 
     public override string ToString() => $"{Base}\n${Arguments.ToLines().Indent()}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || Arguments.Any(arg => predicate(arg));
+
+    public ITypeNode GetType()
+        => new TypeAutoNode();
 }
 
 public class PointerAccessorNode : IAccessible
@@ -92,6 +129,18 @@ public class PointerAccessorNode : IAccessible
     }
 
     public override string ToString() => $"{Base}\n@";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this);
+
+    public ITypeNode GetType()
+    {
+        var t = Base.GetType();
+        if(t is not TypeNode type) return t;
+        type = type.Copy();
+        type.Mods.Dequeue();
+        return type;
+    }
 }
 
 public class MemberAccessorNode : IAccessible
@@ -106,4 +155,10 @@ public class MemberAccessorNode : IAccessible
     }
 
     public override string ToString() => $"{Base}\n. {Member}";
+
+    public bool Contains(Func<IExpressionNode, bool> predicate)
+        => predicate(this) || predicate(Base);
+
+    public ITypeNode GetType()
+        => new TypeAutoNode();
 }
